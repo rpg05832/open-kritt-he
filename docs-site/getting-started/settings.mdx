@@ -1,0 +1,95 @@
+---
+title: "Settings"
+description: "Tune supported engine runtime controls from the open·kritt UI."
+---
+
+Open **Settings** under **Configure** to view and edit supported, non-secret engine
+runtime controls. The page shows the configured value, its source, its accepted range,
+and whether that value is live or needs an engine container recreation.
+
+## Available controls
+
+| Setting | Applies | Purpose |
+| --- | --- | --- |
+| Engine worker slots | Live | Aggregate capacity shared by scan workflow and post-processing jobs. Set it to `0` to pause pickup of new work. |
+| Concurrent scan pool | Live | Maximum number of immediately started scans admitted at once. Queued scans wait until the active pool is empty. |
+| Workers per scan | Live | Hard cap on worker slots used by one scan. Set it to `0` for automatic fair sharing. |
+| Autoscale on provider capacity | Live | Reduces a scan's future worker cap after the provider reports server-capacity throttling. It does not change account quota limits. |
+| Codex Fast mode | Live | Requests faster responses at higher usage cost for native Codex models that advertise Fast support. Disabled by default. |
+| Minimum free storage | Live | Pauses new scan containers below the configured host free-space floor. |
+| Ignore low-storage safeguard | Live | Starts new scan containers regardless of free disk space while preserving the configured threshold for later use. |
+| Workspace setup concurrency | Engine recreation | Limits simultaneous checkout and isolated workspace preparation. |
+| Model-call retries | Live | Additional attempts for retryable workflow-step and post-script model calls. |
+| Cyber-block retries | Live | Opt-in additional attempts after a provider blocks a request under its cybersecurity safety policy. `0` keeps the fail-fast default. |
+| Model-call timeout | Live | Maximum duration of each future harness invocation. |
+
+Live changes affect future work; already-running model calls keep the values they
+started with. In the bundled Docker Compose deployment, settings are also written to
+the project `.env` file so a future `docker compose up` recreation keeps them.
+
+Numeric startup settings must be finite. Invalid values such as `NaN` or
+`Infinity` use the setting's default, just like other invalid numeric text.
+Storage amounts too large to fit the supported byte range also use their defaults.
+For minimum free storage, that fallback is 20 GiB; an explicit finite `0`
+continues to disable the minimum floor.
+
+<Note>
+  `docker compose restart` does not reload values from `.env`. After changing workspace
+  setup concurrency, recreate the engine with
+  `docker compose up -d --force-recreate engine`.
+</Note>
+
+<Warning>
+  Raising worker or setup concurrency can exhaust provider rate limits, Docker
+  networking, CPU, memory, or disk capacity. Ignoring the low-storage safeguard can
+  fill the host disk and cause scans or other services to fail. The UI asks for
+  confirmation before enabling this override, pausing work, or raising worker slots
+  above the conservative recommendation.
+</Warning>
+
+## Codex Fast mode
+
+![Codex Fast mode setting, disabled by default](/images/codex-fast-mode.png)
+
+Enable **Codex Fast mode** to request the Fast service tier for future native Codex
+calls. Saving the enabled setting asks for confirmation because it can increase
+usage costs. Existing calls keep their original setting.
+
+The engine checks the selected model's advertised service tiers before requesting
+Fast. If the catalog is missing, unavailable, or does not advertise Fast for that
+model, the call keeps its normal tier. OpenRouter calls and tool-free generation
+are unaffected. A model advertising Fast does not guarantee that every account is
+eligible; provider account restrictions still apply.
+
+Availability and pricing depend on the model and authentication method. ChatGPT
+sign-ins use Codex usage limits and credits; API-key calls use API billing. See the
+official [Codex speed guide](https://learn.chatgpt.com/docs/agent-configuration/speed)
+for current details. The equivalent environment setting is
+`ENGINE_CODEX_FAST_MODE=true`; its default is `false`.
+
+## Scheduling behavior
+
+Engine worker slots are shared execution capacity. The concurrent scan pool controls how
+many scans can share that capacity, while workers per scan prevents one scan from taking
+every slot. With automatic sharing, active scans receive a fair portion of the available
+workers.
+
+Queued scans remain separate from that pool: they start only after active scans finish.
+Automatic resume of an entire failed scan remains intentionally unavailable.
+
+Model-call retries do not automatically resume a scan after it reaches the failed
+state. A failed scan still uses the manual **Resume** action. Temporary provider limits
+use the separate `rate_limited` state and retry automatically.
+
+Cyber-block retries are independent of ordinary model-call retries. A value of `3`
+allows three retries after the first blocked call, for up to four total attempts.
+Because policy decisions are often deterministic, leave this at `0` unless repeated
+attempts are appropriate for your provider account and workload.
+
+## Secrets
+
+Settings returns only an explicit allowlist of non-secret runtime values. Provider API
+keys and login credentials are managed separately under **Accounts** and are never
+included in the settings response.
+
+Concurrent settings saves are applied in order, including any rollback after a persistence error. A failed save cannot undo a later successful save.

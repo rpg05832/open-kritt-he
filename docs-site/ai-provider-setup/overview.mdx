@@ -1,0 +1,113 @@
+---
+title: "Choose an AI provider"
+description: "Configure one supported model provider before creating workflows, post-scripts, or scans."
+---
+
+open·kritt needs **one** AI access method. You can configure more than one and choose
+between them per run, but a single working provider is enough to start.
+
+| Provider | Access method | Model input |
+| --- | --- | --- |
+| **Codex** | ChatGPT/Codex login or an OpenAI Platform key | Account-specific picker |
+| **Claude** | Claude subscription login or `ANTHROPIC_API_KEY` | Subscription aliases or account-specific picker |
+| **DeepSeek** | `DEEPSEEK_API_KEY` | Searchable authenticated catalog |
+| **OpenRouter** | `OPENROUTER_API_KEY` | Searchable authenticated catalog, with an exact-ID fallback |
+| **xAI** | Grok device login or `XAI_API_KEY` | Searchable authenticated catalog (with key), with an exact-ID fallback |
+
+<CardGroup cols={2}>
+  <Card title="Codex" icon="terminal" href="/ai-provider-setup/codex">
+    Use the recommended ChatGPT device login or an OpenAI Platform API key.
+  </Card>
+  <Card title="Claude Code" icon="sparkles" href="/ai-provider-setup/claude-code">
+    Sign in with an eligible Claude subscription, or use an Anthropic API key.
+  </Card>
+  <Card title="DeepSeek" icon="code" href="/ai-provider-setup/deepseek">
+    Use a DeepSeek API key with the Codex harness.
+  </Card>
+  <Card title="OpenRouter" icon="route" href="/ai-provider-setup/openrouter">
+    Use one key to access compatible models through OpenRouter.
+  </Card>
+  <Card title="xAI" icon="bolt" href="/ai-provider-setup/xai">
+    Use Grok device login or an xAI API key with the Grok Build harness.
+  </Card>
+</CardGroup>
+
+## Provider visibility and API checks
+
+New browser profiles show all providers. Scan and draft-generation selectors list
+**Codex**, **Claude Code**, **DeepSeek**, **OpenRouter**, and **xAI**; providers without
+an account are visible but disabled.
+Use **Show or hide providers** in Accounts or beside a provider selector to customize
+the list. Existing browser preferences are preserved, so re-enable any providers
+you previously hid there. Hiding does not remove accounts or change saved selections;
+an existing selected provider remains visible in its selector.
+
+[DeepSeek](/ai-provider-setup/deepseek) uses a live model catalog and the Codex harness
+for scans and draft generation. Accounts also offers a short text API check.
+
+## Common setup flow
+
+<Steps>
+  <Step title="Open setup">
+    From the repository root, run:
+
+    ```bash
+    ./kritt setup
+    ```
+  </Step>
+  <Step title="Choose one access method">
+    Select **Codex login**, **OpenAI API key**, **Codex API key**, **Anthropic API key**,
+    **DeepSeek API key**, **OpenRouter API key**, or **xAI API key**. Follow the provider
+    guide above to obtain the correct credential. The CLI configures keys and Codex login;
+    Claude and xAI device login, plus DeepSeek/OpenRouter/xAI key management, are also
+    available from the running application's **Accounts** page.
+  </Step>
+  <Step title="Start or recreate the stack">
+    ```bash
+    ./kritt start
+    ```
+
+    If open·kritt is already running, stop the attached stack with Ctrl+C first. Existing
+    containers do not receive a newly changed `.env` value until Compose recreates them.
+  </Step>
+  <Step title="Verify the provider">
+    Run `./kritt setup` again and confirm the selected method is marked as present. The
+    workflow generator, post-script generator, and new-scan form enable providers
+    that open·kritt detects as configured; other visible providers link to Accounts.
+  </Step>
+</Steps>
+
+## Credential handling
+
+API keys configured by the CLI are written to the repository's `.env` file. Codex logins
+are stored under `ENGINE_CODEX_ACCOUNTS_HOST`, which defaults to
+`./.data/codex-accounts`; a Claude login is stored under `ENGINE_CLAUDE_HOME`, which
+defaults to `./.data/claude`; a Grok/xAI login is stored under
+`ENGINE_GROK_HOME_HOST` / `ENGINE_GROK_ACCOUNTS_HOST`, which default to `./.data/grok`
+and `./.data/grok-accounts`. The Accounts page keeps Codex/Claude/xAI account paths and
+its DeepSeek, OpenRouter, and xAI keys synchronized with `.env`, and mirrors those keys
+under `.data/engine/credentials` so running services see changes immediately. `.env` and
+`.data/` are ignored by Git.
+
+<Warning>
+  Treat `.env`, `./.data/codex`, `./.data/codex-accounts`, `./.data/claude`,
+  `./.data/grok`, `./.data/grok-accounts`, and the engine credential store as secrets.
+  Never commit them, paste them into an issue, or share them with another user. Revoke
+  and replace a credential immediately if it is exposed.
+</Warning>
+
+The backend has private write access to `.env` and the provider stores so Accounts can
+persist additions and removals, but secret values are never returned by the API. The
+engine receives the actual credential when it starts a model harness.
+
+<Note>
+  `GITHUB_TOKEN` is not an AI provider credential. It is optional and is only needed to
+  clone private GitHub repositories or dependencies.
+</Note>
+
+Next: configure the recommended [Codex provider](/ai-provider-setup/codex),
+[Claude Code](/ai-provider-setup/claude-code), or
+[DeepSeek](/ai-provider-setup/deepseek), [OpenRouter](/ai-provider-setup/openrouter),
+or [xAI](/ai-provider-setup/xai).
+
+Simultaneous requests to start a login for the same provider share one login session. Logins for different providers remain independent.

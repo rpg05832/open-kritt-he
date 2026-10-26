@@ -1,0 +1,24 @@
+# Code owners — GitHub auto-requests a review from the listed owner(s) when a PR
+# touches matching paths. See https://docs.github.com/articles/about-code-owners
+#
+# Keep this file in sync with MAINTAINERS.md. Project ownership is held jointly
+# and exclusively by @harel-coffee and @GabiCtrlZ. Maintainer or contributor
+# status does not confer project ownership.
+
+# Default owner for everything in the repo.
+*                       @harel-coffee @GabiCtrlZ
+
+# Components
+/frontend/              @harel-coffee @GabiCtrlZ
+/backend/               @harel-coffee @GabiCtrlZ
+/engine/                @harel-coffee @GabiCtrlZ
+/database/              @harel-coffee @GabiCtrlZ
+/executor-view/         @harel-coffee @GabiCtrlZ
+
+# CI / release / governance — change with extra care.
+/.github/               @harel-coffee @GabiCtrlZ
+/scripts/               @harel-coffee @GabiCtrlZ
+/CONTRIBUTION_TERMS.md  @harel-coffee @GabiCtrlZ
+/RELEASE.md             @harel-coffee @GabiCtrlZ
+/SECURITY.md            @harel-coffee @GabiCtrlZ
+/VERSION                @harel-coffee @GabiCtrlZ
