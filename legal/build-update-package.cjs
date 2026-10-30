@@ -1,8 +1,9 @@
 // Builds the automatic-update package read by maintenance-agent.ps1:
 //   open-kritt-hebrew-update.zip  (only paths the agent's Source-Allowed accepts, plus app/images.json)
-//   open-kritt-hebrew-update.json (distribution, format 1, version, SHA-256 of the zip)
+//   open-kritt-hebrew-update.json (distribution, format 2, version, SHA-256 of the zip, publisher signature)
 // Usage: node legal/build-update-package.cjs <version> <outputFolder>
 const fs = require('fs'), path = require('path'), crypto = require('crypto'), cp = require('child_process');
+const { signManifest } = require('./update-signing.cjs');
 const root = path.resolve(__dirname, '..');
 const [version, outputArg] = process.argv.slice(2);
 if (!version || !outputArg) throw new Error('usage: build-update-package.cjs <version> <outputFolder>');
@@ -45,16 +46,15 @@ const script = 'Add-Type -AssemblyName System.IO.Compression.FileSystem; $base=(
 cp.execFileSync(process.platform === 'win32' ? 'powershell.exe' : 'pwsh', ['-NoProfile', '-Command', script], { env: { ...process.env, K_ZIP: zip, K_STAGE: stage }, stdio: 'inherit' });
 fs.rmSync(stage, { recursive: true, force: true });
 const sha256 = crypto.createHash('sha256').update(fs.readFileSync(zip)).digest('hex');
-// Sign the hash with the publisher's private key so the installed app can prove
-// the update is authentic (the key comes from a GitHub Actions secret, PEM in
-// OPEN_KRITT_UPDATE_PRIVATE_KEY or a path in OPEN_KRITT_UPDATE_PRIVATE_KEY_FILE).
-const keyPem = process.env.OPEN_KRITT_UPDATE_PRIVATE_KEY
-  || (process.env.OPEN_KRITT_UPDATE_PRIVATE_KEY_FILE && fs.readFileSync(process.env.OPEN_KRITT_UPDATE_PRIVATE_KEY_FILE, 'utf8'));
-const manifest = { distribution: 'open-kritt-hebrew', format: keyPem ? 2 : 1, version, sha256 };
-if (keyPem) {
-  manifest.signature = crypto.sign('sha256', Buffer.from(sha256, 'utf8'), crypto.createPrivateKey(keyPem)).toString('base64');
+// Signed with the publisher's private key, which stays on the publisher's computer
+// (path in OPEN_KRITT_UPDATE_PRIVATE_KEY_FILE). Without it the manifest is left
+// unsigned; legal/sign-release.cjs signs and uploads it after the CI release.
+const keyFile = process.env.OPEN_KRITT_UPDATE_PRIVATE_KEY_FILE;
+const manifest = { distribution: 'open-kritt-hebrew', format: 2, version, sha256 };
+if (keyFile) {
+  manifest.signature = signManifest(manifest, fs.readFileSync(keyFile, 'utf8'));
 } else {
-  console.warn('WARNING: no signing key; the update package is unsigned and signed-update clients will reject it.');
+  console.warn('note: unsigned manifest; run legal/sign-release.cjs to sign and upload it.');
 }
 fs.writeFileSync(path.join(output, 'open-kritt-hebrew-update.json'), JSON.stringify(manifest, null, 2));
-console.log(JSON.stringify({ zip, files: files.length, sha256, signed: Boolean(keyPem) }));
+console.log(JSON.stringify({ zip, files: files.length, sha256, signed: Boolean(keyFile) }));

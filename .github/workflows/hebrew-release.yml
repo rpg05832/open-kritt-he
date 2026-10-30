@@ -161,15 +161,12 @@ jobs:
           }
       - name: Source package, Setup.exe and update package
         shell: pwsh
-        env:
-          # Private signing key (RSA) for the auto-update manifest. Set as a repo
-          # secret; the public half ships in app/windows/update-public-key.json.
-          OPEN_KRITT_UPDATE_PRIVATE_KEY: ${{ secrets.OPEN_KRITT_UPDATE_PRIVATE_KEY }}
+        # The update manifest is signed afterwards on the publisher's computer
+        # (legal/sign-release.cjs); the private key never reaches GitHub.
         run: |
           node legal/build-distribution.cjs "$PWD/../dist-out/release" --zip
           node legal/build-setup.cjs
           ./legal/test-distribution.ps1 -ReleaseRoot "$PWD/../dist-out/release" -SkipDocker
-          if (-not $env:OPEN_KRITT_UPDATE_PRIVATE_KEY) { throw 'OPEN_KRITT_UPDATE_PRIVATE_KEY secret is not set; refusing to publish an unsigned update.' }
           node legal/build-update-package.cjs "$env:TAG" "$PWD/../dist-out"
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
@@ -177,7 +174,7 @@ jobs:
           name: סריקת אבטחה ${{ env.TAG }}
           body: |
             הגרסה העברית, התוספות והשיפורים בוצעו על ידי @ארי ממתמחים טופ. מבוסס על open·kritt (AGPL-3.0).
-            להתקנה: הורידו את SecurityScan-Setup והפעילו אותו. התקנה קיימת מתעדכנת אוטומטית ממסך התחזוקה.
+            להתקנה: הורידו את SecurityScan-Setup והפעילו אותו. התקנה קיימת מתעדכנת אוטומטית ממסך התחזוקה, אחרי שקובץ העדכון החתום יעלה.
             התמונות המוכנות נבנו ונבדקו כאן, נחתמו (Sigstore) וננעלו לפי טביעה ב־images.json.
           files: |
             ../dist-out/release.zip
@@ -185,5 +182,4 @@ jobs:
             ../distribution/SecurityScan-Setup-*.exe
             ../distribution/SecurityScan-Setup-*.exe.sha256
             ../dist-out/open-kritt-hebrew-update.zip
-            ../dist-out/open-kritt-hebrew-update.json
             legal/images.json
