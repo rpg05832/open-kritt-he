@@ -1,0 +1,155 @@
+[
+  {
+    "slug": "he-auth-review",
+    "name": "הרשאות וכניסה לחשבון",
+    "description": "לאתרים ו־API עם משתמשים. בודקת הפרדה בין משתמשים, תפקידים וארגונים.",
+    "content": "For web/API projects trace identity, sessions, authorization on every operation, tenant boundaries, field-level and bulk/import permissions. Test role changes and ownership checks conceptually and with local fixtures when available. Never assume a UI restriction protects the server. Verify middleware and framework defaults before reporting.",
+    "sourceUrl": "https://mitmachim.top/user/%D7%90%D7%A8%D7%99",
+    "attribution": "הגרסה העברית, התוספות והשיפורים בוצעו על ידי @ארי ממתמחים טופ. הוראות מקומיות, לא מיומנות upstream מלאה.",
+    "licenseSpdx": "AGPL-3.0-only"
+  },
+  {
+    "slug": "he-input-files",
+    "name": "קלט, קבצים והזרקות",
+    "description": "לפרויקטים שמקבלים מידע חיצוני, קבצים או כתובות.",
+    "content": "Trace untrusted input to database, shell, template, filesystem and URL sinks. Review upload type validation, traversal, archive extraction, symlink handling, SSRF and redirects. Parameterization and existing sanitizers may mitigate candidates. Prove a concrete reachable path; use only disposable local fixtures.",
+    "sourceUrl": "https://mitmachim.top/user/%D7%90%D7%A8%D7%99",
+    "attribution": "הגרסה העברית, התוספות והשיפורים בוצעו על ידי @ארי ממתמחים טופ. הוראות מקומיות, לא מיומנות upstream מלאה.",
+    "licenseSpdx": "AGPL-3.0-only"
+  },
+  {
+    "slug": "he-secrets-crypto",
+    "name": "סודות, הצפנה ופרטיות",
+    "description": "למערכות ששומרות פרטי כניסה או מידע רגיש.",
+    "content": "Review exposed credentials, logs, encryption/key lifecycle, TLS verification, session cookies and sensitive outputs. Never repeat real secret values in reports. Distinguish actual exposed credentials from placeholders and tests. Missing hardening alone is not proof of exploitation.",
+    "sourceUrl": "https://mitmachim.top/user/%D7%90%D7%A8%D7%99",
+    "attribution": "הגרסה העברית, התוספות והשיפורים בוצעו על ידי @ארי ממתמחים טופ. הוראות מקומיות, לא מיומנות upstream מלאה.",
+    "licenseSpdx": "AGPL-3.0-only"
+  },
+  {
+    "slug": "he-supply-chain",
+    "name": "תלויות ושרשרת אספקה",
+    "description": "לרשימות ספריות, קובצי נעילה ותהליכי בנייה.",
+    "content": "Inventory manifests and lockfiles; review install hooks, trust sources, CI permissions and pinned actions/images. Do not infer a known vulnerability from age alone. State CVE lookup not performed if no verified advisory data exists. Never run target install scripts or network audit services by default.",
+    "sourceUrl": "https://mitmachim.top/user/%D7%90%D7%A8%D7%99",
+    "attribution": "הגרסה העברית, התוספות והשיפורים בוצעו על ידי @ארי ממתמחים טופ. הוראות מקומיות, לא מיומנות upstream מלאה.",
+    "licenseSpdx": "AGPL-3.0-only"
+  },
+  {
+    "slug": "he-business-logic",
+    "name": "לוגיקה עסקית ופעולות מקבילות",
+    "description": "לכספים, הזמנות, מלאי וכל פעולה שמשנה מצב.",
+    "content": "Identify state invariants, transactions, idempotency, race conditions, rounding, quantity/sign constraints and duplicate requests. Trace actual mutation paths. Require realistic attacker permissions and impact; do not assume missing transactions without checking database constraints and locks.",
+    "sourceUrl": "https://mitmachim.top/user/%D7%90%D7%A8%D7%99",
+    "attribution": "הגרסה העברית, התוספות והשיפורים בוצעו על ידי @ארי ממתמחים טופ. הוראות מקומיות, לא מיומנות upstream מלאה.",
+    "licenseSpdx": "AGPL-3.0-only"
+  },
+  {
+    "slug": "he-platform-config",
+    "name": "תצורה ופריסה",
+    "description": "לשרתים, Docker, CI וקובצי הגדרות.",
+    "content": "Review applicable deployment config, debug settings, trust proxy, CORS, error output, credentials exposure and service privileges. Separate source config from unknown deployed settings. Never claim missing deployed headers or public exposure solely from absent repository settings.",
+    "sourceUrl": "https://mitmachim.top/user/%D7%90%D7%A8%D7%99",
+    "attribution": "הגרסה העברית, התוספות והשיפורים בוצעו על ידי @ארי ממתמחים טופ. הוראות מקומיות, לא מיומנות upstream מלאה.",
+    "licenseSpdx": "AGPL-3.0-only"
+  },
+  {
+    "slug": "he-verify-coverage",
+    "name": "אימות ממצאים ותיעוד כיסוי",
+    "description": "לכל פרויקט: מסננת התרעות שווא ומציינת מה לא נבדק.",
+    "content": "Independently re-read each candidate and search mitigations. Report exact location, realistic prerequisites, impact, static/dynamic verification, confidence, remediation and coverage limits in Hebrew. If fixtures are unavailable say so. No findings is not a security certificate. Do not mark exploitable true without a supported reachable attack path.",
+    "sourceUrl": "https://mitmachim.top/user/%D7%90%D7%A8%D7%99",
+    "attribution": "הגרסה העברית, התוספות והשיפורים בוצעו על ידי @ארי ממתמחים טופ. הוראות מקומיות, לא מיומנות upstream מלאה.",
+    "licenseSpdx": "AGPL-3.0-only"
+  },
+  {
+    "slug": "he-secret-triage",
+    "name": "מיון סודות שנמצאו",
+    "description": "כשבדיקת הסודות מצאה מפתחות או סיסמאות בקוד או בהיסטוריית Git.",
+    "content": "Use the redacted \"secrets\" candidates. Classify each as real credential, test fixture, example or placeholder using file location, naming and surrounding code, never by printing the value. For real credentials report: what the credential grants, whether it appears only in history, and the required fix order: revoke and rotate first, remove from code, then purge history and add a secret-scanning guard. Never output or reconstruct the secret.",
+    "sourceUrl": "https://mitmachim.top/user/%D7%90%D7%A8%D7%99",
+    "attribution": "הגרסה העברית, התוספות והשיפורים בוצעו על ידי @ארי ממתמחים טופ. הוראות מקומיות, לא מיומנות upstream מלאה.",
+    "licenseSpdx": "AGPL-3.0-only"
+  },
+  {
+    "slug": "he-dependency-reachability",
+    "name": "בדיקת ניצול של ספריות פגיעות",
+    "description": "כשבדיקת הספריות מצאה גרסאות עם חולשות ידועות.",
+    "content": "For every dependency finding determine runtime versus development use, where the package is imported, whether the vulnerable API or feature is called with attacker-influenced data, and the minimal fixed version. Report a vulnerability only with a plausible reachable path; otherwise give an update recommendation with priority. Never invent CVE identifiers; use only the IDs in the tool output.",
+    "sourceUrl": "https://mitmachim.top/user/%D7%90%D7%A8%D7%99",
+    "attribution": "הגרסה העברית, התוספות והשיפורים בוצעו על ידי @ארי ממתמחים טופ. הוראות מקומיות, לא מיומנות upstream מלאה.",
+    "licenseSpdx": "AGPL-3.0-only"
+  },
+  {
+    "slug": "he-config-review",
+    "name": "קובצי הגדרות ופריסה",
+    "description": "Dockerfile, Kubernetes, Terraform ותהליכי CI.",
+    "content": "Use the \"configuration\" candidates as leads. Check whether the file is used in production, which network exposure and privileges result (root containers, privileged mode, open security groups, secrets in CI logs, unpinned actions or images, write-all tokens). Separate exploitable exposure from hardening advice and explain the concrete deployment assumption behind each finding.",
+    "sourceUrl": "https://mitmachim.top/user/%D7%90%D7%A8%D7%99",
+    "attribution": "הגרסה העברית, התוספות והשיפורים בוצעו על ידי @ארי ממתמחים טופ. הוראות מקומיות, לא מיומנות upstream מלאה.",
+    "licenseSpdx": "AGPL-3.0-only"
+  },
+  {
+    "slug": "he-quality-correctness",
+    "name": "תקינות: באגים לוגיים",
+    "description": "בדיקת תקינות קוד: טיפול בערכים ריקים, השוואות, מקרי קצה ומקביליות.",
+    "content": "Trace the main business flows and look for logic that breaks on empty, missing, duplicated or boundary input; wrong equality or truthiness checks; off-by-one errors; time zone and unit mistakes; missing await and race conditions on shared state. Prove each bug with the exact path and a triggering input or a minimal local test; do not report hypothetical problems without a reachable path.",
+    "sourceUrl": "https://mitmachim.top/user/%D7%90%D7%A8%D7%99",
+    "attribution": "הגרסה העברית, התוספות והשיפורים בוצעו על ידי @ארי ממתמחים טופ. הוראות מקומיות, לא מיומנות upstream מלאה.",
+    "licenseSpdx": "AGPL-3.0-only"
+  },
+  {
+    "slug": "he-quality-errors-resources",
+    "name": "תקינות: שגיאות ומשאבים",
+    "description": "בדיקת תקינות קוד: חריגות שנבלעות, ניקוי משאבים וזליגות.",
+    "content": "Find swallowed or overly broad exceptions that hide failures, error paths that leave partial state, missing cleanup of files, sockets, database connections, timers and subscriptions, retries without limits and unbounded caches or queues. Report the concrete consequence (data loss, hang, leak) and the fix.",
+    "sourceUrl": "https://mitmachim.top/user/%D7%90%D7%A8%D7%99",
+    "attribution": "הגרסה העברית, התוספות והשיפורים בוצעו על ידי @ארי ממתמחים טופ. הוראות מקומיות, לא מיומנות upstream מלאה.",
+    "licenseSpdx": "AGPL-3.0-only"
+  },
+  {
+    "slug": "he-quality-maintainability",
+    "name": "תקינות: תחזוקתיות ובדיקות",
+    "description": "בדיקת תקינות קוד: מורכבות, קוד כפול וחוסרים בבדיקות.",
+    "content": "Use the complexity, duplication and tests output as leads. Report a maintainability finding only when it carries real risk: duplicated logic that has already diverged, a complex function on a critical path without tests, or a critical module with no tests at all. Suggest the smallest refactor or the specific tests to add. Formatting and naming preferences are never findings.",
+    "sourceUrl": "https://mitmachim.top/user/%D7%90%D7%A8%D7%99",
+    "attribution": "הגרסה העברית, התוספות והשיפורים בוצעו על ידי @ארי ממתמחים טופ. הוראות מקומיות, לא מיומנות upstream מלאה.",
+    "licenseSpdx": "AGPL-3.0-only"
+  },
+  {
+    "slug": "he-quality-performance",
+    "name": "תקינות: ביצועים",
+    "description": "בדיקת תקינות קוד: שאילתות בלולאה, זיכרון ללא גבול ופעולות חוסמות.",
+    "content": "Look for database or network calls inside loops (N+1), missing pagination or limits, loading whole tables or files into memory, quadratic algorithms on user-sized input, synchronous or blocking calls on request paths, missing indexes implied by query patterns and caches without eviction. Report only with a concrete code path and a realistic data size; state the expected cost and the fix.",
+    "sourceUrl": "https://mitmachim.top/user/%D7%90%D7%A8%D7%99",
+    "attribution": "הגרסה העברית, התוספות והשיפורים בוצעו על ידי @ארי ממתמחים טופ. הוראות מקומיות, לא מיומנות upstream מלאה.",
+    "licenseSpdx": "AGPL-3.0-only"
+  },
+  {
+    "slug": "he-quality-concurrency",
+    "name": "תקינות: מקביליות וקוד אסינכרוני",
+    "description": "בדיקת תקינות קוד: הבטחות שלא ממתינים להן, מרוצים ומצב משותף.",
+    "content": "Find promises or tasks that are never awaited, errors lost in background tasks, check-then-act races on shared state or database rows without locking or transactions, non-atomic counters, timers and listeners that outlive their owner and retry loops that can run concurrently. Describe the exact interleaving that breaks behaviour and the minimal fix (await, transaction, lock, idempotency key).",
+    "sourceUrl": "https://mitmachim.top/user/%D7%90%D7%A8%D7%99",
+    "attribution": "הגרסה העברית, התוספות והשיפורים בוצעו על ידי @ארי ממתמחים טופ. הוראות מקומיות, לא מיומנות upstream מלאה.",
+    "licenseSpdx": "AGPL-3.0-only"
+  },
+  {
+    "slug": "he-quality-contracts",
+    "name": "תקינות: חוזי API, טיפוסים ונתונים",
+    "description": "בדיקת תקינות קוד: אי־התאמה בין צדדים, אימות לא עקבי ושינויים שוברים.",
+    "content": "Compare producers and consumers: request and response shapes, nullable fields, enum values, date and number formats, units and time zones, database schema versus code expectations, migrations versus models and validation that differs between client and server. Report mismatches that cause wrong data or runtime errors, with both sides of the contract cited.",
+    "sourceUrl": "https://mitmachim.top/user/%D7%90%D7%A8%D7%99",
+    "attribution": "הגרסה העברית, התוספות והשיפורים בוצעו על ידי @ארי ממתמחים טופ. הוראות מקומיות, לא מיומנות upstream מלאה.",
+    "licenseSpdx": "AGPL-3.0-only"
+  },
+  {
+    "slug": "he-quality-dependencies-build",
+    "name": "תקינות: תלויות ובנייה",
+    "description": "בדיקת תקינות קוד: תלויות לא בשימוש, גרסאות סותרות וסקריפטים שבורים.",
+    "content": "Check declared versus imported dependencies (unused, missing, duplicated major versions), unpinned or floating versions where reproducibility matters, lockfile drift, build and test scripts that reference missing files, environment variables that are required but undocumented and CI steps that silently skip tests. Report only items that break builds, cause drift between environments or hide failures.",
+    "sourceUrl": "https://mitmachim.top/user/%D7%90%D7%A8%D7%99",
+    "attribution": "הגרסה העברית, התוספות והשיפורים בוצעו על ידי @ארי ממתמחים טופ. הוראות מקומיות, לא מיומנות upstream מלאה.",
+    "licenseSpdx": "AGPL-3.0-only"
+  }
+]

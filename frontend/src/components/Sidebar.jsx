@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ui.jsx';
 import Logo from './Logo.jsx';
+import { HEBREW_IMPROVEMENTS } from '../lib/hebrewImprovements.js';
 
 function NavItem({ label, to, active }) {
   return (
@@ -134,6 +135,7 @@ export default function Sidebar({ onShareCommunity }) {
         OPERATE
       </div>
       <div className="sidebar-nav-group" style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <NavItem label="מדריך למשתמש" to="/guide" active={isActive('/guide')} />
         <NavItem label="Overview" to="/" active={isActive('/', true)} />
         <NavItem label="Workflows" to="/workflows" active={isActive('/workflows')} />
         <NavItem label="Scans" to="/scans" active={isActive('/scans')} />
@@ -154,6 +156,9 @@ export default function Sidebar({ onShareCommunity }) {
       <div className="sidebar-nav-group" style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
         <NavItem label="Accounts" to="/accounts" active={isActive('/accounts')} />
         <NavItem label="Settings" to="/settings" active={isActive('/settings')} />
+        <NavItem label="מצב המערכת ותחזוקה" to="/maintenance" active={isActive('/maintenance')} />
+        <NavItem label="השוואת בדיקות" to="/compare" active={isActive('/compare')} />
+        <NavItem label="רישיון וקרדיטים" to="/license" active={isActive('/license')} />
       </div>
 
       <div className="sidebar-community">
@@ -167,6 +172,24 @@ export default function Sidebar({ onShareCommunity }) {
       </div>
 
       <div className="sidebar-footer" style={{ paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+        <div style={{ fontSize: 12, padding: '4px 8px', lineHeight: 1.7 }}>
+          עברית, תוספות ושיפורים:{' '}
+          <a href="https://mitmachim.top/user/%D7%90%D7%A8%D7%99" target="_blank" rel="noreferrer">
+            <bdi>@ארי</bdi> ממתמחים טופ
+          </a>
+          <details className="credit-improvements">
+            <summary>מה נוסף בגרסה העברית?</summary>
+            <ul>
+              {HEBREW_IMPROVEMENTS.slice(0, 6).map((item) => (
+                <li key={item.title}>{item.title}</li>
+              ))}
+            </ul>
+            <Link to="/license#improvements">לרשימה המלאה</Link>
+          </details>
+          <div>
+            <Link to="/license">רישיון וקרדיטים</Link> · <a href="mailto:rpg05832@gmail.com">יצירת קשר</a>
+          </div>
+        </div>
         <button
           className="sidebar-theme-toggle"
           type="button"
@@ -204,7 +227,7 @@ export default function Sidebar({ onShareCommunity }) {
             color: 'var(--text-3)',
           }}
         >
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--ok)' }} /> engine online · v
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--text-3)' }} /> גרסת ממשק · v
           {__APP_VERSION__}
         </div>
       </div>

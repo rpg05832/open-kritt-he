@@ -53,10 +53,12 @@ from .models import (
 from .post_processing import PostProcessor, PostProcessRateLimited
 from .prompting import (
     harness_prompt,
+    incremental_review_prompt,
     native_agent_skills_prompt,
     patched_since_prompt,
     render_prompt,
     repeat_append_prompt,
+    targeted_review_prompt,
 )
 from .provider_credentials import provider_environment
 from .queue import build_pending_jobs, configured_step_ids
@@ -1521,6 +1523,8 @@ class Worker:
                         native_agent_skills_prompt(agent_skills, harness_name),
                         workspace_prompt_context(prepared.layout, prepared.manifest_json),
                         rendered_prompt,
+                        incremental_review_prompt(scan),
+                        targeted_review_prompt(scan),
                         repeat_append_prompt(state.repeat_run, prior_repeat_results),
                     ]
                     prompt_filled = harness_prompt(

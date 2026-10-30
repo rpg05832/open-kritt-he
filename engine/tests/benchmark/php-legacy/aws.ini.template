@@ -1,0 +1,4 @@
+; Benchmark project: cloud keys committed to the code (filled in at benchmark time).
+[default]
+region = eu-west-1
+aws_access_key_id = {{SECRET:aws}}

@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { duplicateScanPath, newScanChooserPath, scanConfigurationDraft } from './scanDuplication.js';
 
 describe('scanConfigurationDraft', () => {
+  it('preserves disabled network audits without copying the previous baseline identifier', () => {
+    const draft = scanConfigurationDraft({
+      configuration: { scan_mode: 'changes', dependency_audit: false, incremental_baseline_id: '123' },
+    });
+    expect(draft.scanMode).toBe('changes');
+    expect(draft.dependencyAudit).toBe(false);
+    expect(JSON.parse(draft.configuration)).not.toHaveProperty('incremental_baseline_id');
+  });
   it('copies reusable scan inputs and strips relationship metadata from configuration JSON', () => {
     const source = {
       id: '91',
@@ -73,6 +81,8 @@ describe('scanConfigurationDraft', () => {
         { kind: 'local', repo_full: 'local-library', commit_sha: null },
       ],
       configuration: JSON.stringify({ max_files: 1200, include_tests: true }, null, 2),
+      scanMode: 'full',
+      dependencyAudit: true,
       model: 'gpt-5.4',
       model_provider: 'codex',
       harness: 'codex',

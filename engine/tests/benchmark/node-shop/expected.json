@@ -1,0 +1,48 @@
+{
+  "description": "Express API: SQL and command injection, path traversal, open redirect, eval, committed payment key, unsafe Dockerfile",
+  "clean": [
+    "safe.js"
+  ],
+  "expected": [
+    {
+      "tool": "semgrep",
+      "rule": "javascript-sql-string-building",
+      "file": "server.js"
+    },
+    {
+      "tool": "semgrep",
+      "rule": "javascript-command-injection",
+      "file": "server.js"
+    },
+    {
+      "tool": "semgrep",
+      "rule": "javascript-path-from-request",
+      "file": "server.js"
+    },
+    {
+      "tool": "semgrep",
+      "rule": "javascript-open-redirect",
+      "file": "server.js"
+    },
+    {
+      "tool": "semgrep",
+      "rule": "javascript-dynamic-eval",
+      "file": "server.js"
+    },
+    {
+      "tool": "secrets",
+      "rule": "stripe-access-token",
+      "file": "config.js"
+    },
+    {
+      "tool": "configuration",
+      "rule": "DS-0001",
+      "file": "Dockerfile"
+    },
+    {
+      "tool": "configuration",
+      "rule": "DS-0002",
+      "file": "Dockerfile"
+    }
+  ]
+}

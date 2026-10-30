@@ -1,3 +1,5 @@
+import SecurityCoverage from '../components/SecurityCoverage.jsx';
+import ScanJourney from '../components/ScanJourney.jsx';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { api, ApiError } from '../api/client.js';
@@ -668,6 +670,8 @@ export default function ScanDetail() {
           />
         </div>
 
+        <ScanJourney scan={scan} />
+        <SecurityCoverage scanId={scan.id} status={scan.status} />
         {postScripts.length > 0 && <ConfiguredPostScripts postScripts={postScripts} />}
 
         <ScanRunSettings

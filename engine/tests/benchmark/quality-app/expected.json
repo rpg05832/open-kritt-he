@@ -1,0 +1,50 @@
+{
+  "description": "Code quality: mutable default argument, undefined name, unused variable, loose equality, overly complex function, duplicated logic",
+  "tools": [
+    "lint_python",
+    "lint_javascript",
+    "complexity",
+    "duplication"
+  ],
+  "clean": [
+    "clean.py",
+    "clean.js"
+  ],
+  "expected": [
+    {
+      "tool": "lint_python",
+      "rule": "B006",
+      "file": "bugs.py"
+    },
+    {
+      "tool": "lint_python",
+      "rule": "F821",
+      "file": "bugs.py"
+    },
+    {
+      "tool": "lint_python",
+      "rule": "F841",
+      "file": "bugs.py"
+    },
+    {
+      "tool": "lint_javascript",
+      "rule": "correctness/noUnusedVariables",
+      "file": "cart.js"
+    },
+    {
+      "tool": "lint_javascript",
+      "rule": "suspicious/noDoubleEquals",
+      "file": "cart.js"
+    },
+    {
+      "tool": "complexity",
+      "rule": "complexity",
+      "file": "complex.py"
+    },
+    {
+      "tool": "duplication",
+      "rule": "duplication",
+      "file": "invoice_total.py"
+    }
+  ]
+}

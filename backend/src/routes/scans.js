@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+import { compatibleScanSettings } from '../lib/incrementalScan.js';
 import { Prisma } from '@prisma/client';
 import { ZipArchive } from 'archiver';
 import { Router } from 'express';
@@ -37,6 +39,25 @@ import {
 } from '../lib/findingExport.js';
 
 const router = Router();
+router.get('/:id/security-coverage', async (req, res, next) => {
+  if (!/^[1-9][0-9]*$/.test(req.params.id)) return res.status(400).json({ error: 'מזהה בדיקה אינו תקין' });
+  try {
+    const scan = await prisma.scan.findUnique({where: {id: BigInt(req.params.id)}, select: {insertedAt: true}});
+    if (!scan) return res.status(404).json({error: 'הבדיקה לא נמצאה'});
+    const report = JSON.parse(await readFile('/engine-data/security-reports/scan-' + req.params.id + '.json', 'utf8'));
+    if (!report.generated_at || report.generated_at * 1000 < scan.insertedAt.getTime()) {
+      return res.json({available: false, reason: 'לא נוצר עדיין דוח כלי בדיקה עבור ההרצה הזאת.'});
+    }
+    res.json(report);
+  } catch (e) {
+    if (e.code === 'ENOENT')
+      return res.json({
+        available: false,
+        reason: 'הבדיקה הזו לא יצרה דוח כלי בדיקה מקומי. הדבר אינו מעיד על כיסוי מלא.',
+      });
+    next(e);
+  }
+});
 const runFindingExport = createFindingExportLimiter();
 const DELETABLE_SCAN_STATUSES = new Set(['completed', 'stopped', 'failed', 'paused']);
 export const ACTIVE_SCAN_STATUSES = ['prewarming_cache', 'running', 'post_processing'];
@@ -1087,6 +1108,40 @@ router.post('/', async (req, res, next) => {
         commit_sha: d.commitSha,
       }));
 
+      // Pin a completed, compatible baseline on the server. Never trust a client-supplied ID.
+      const incrementalConfiguration = { incremental_baseline_id: null };
+      if (configurationObject.scan_mode === 'changes') {
+        const candidates = await tx.scan.findMany({
+          where: {
+            repoFull: valid.repoFull,
+            repoKind: valid.repoKind,
+            workflowId: workflow.id,
+            repoScope: valid.repoScope,
+            status: 'completed',
+            model: valid.model,
+            modelProvider: valid.modelProvider,
+            harness: valid.harness,
+            insertedAt: { gte: workflow.updatedAt },
+          },
+          orderBy: { id: 'desc' },
+          take: 20,
+        });
+        const baseline = candidates.find((candidate) =>
+          compatibleScanSettings(candidate, {
+            configuration: {
+              ...configurationObject,
+              post_script_ids: configuredPostScriptIds,
+              agent_skill_ids: configuredAgentSkillIds,
+              post_processing_thinking_effort: valid.postProcessingThinkingEffort,
+            },
+            dependencies: dependenciesDetail,
+            skills: configuredAgentSkillIds,
+          })
+        );
+        incrementalConfiguration.incremental_baseline_id = baseline?.id.toString() || null;
+        incrementalConfiguration.security_preflight = true;
+      }
+
       return tx.scan.create({
         data: {
           workflowId: workflow.id,
@@ -1100,6 +1155,7 @@ router.post('/', async (req, res, next) => {
           agentSkillIds: queryAgentSkillIds.map((id) => BigInt(id)),
           configuration: {
             ...configurationObject,
+            ...incrementalConfiguration,
             post_script_ids: configuredPostScriptIds,
             agent_skill_ids: configuredAgentSkillIds,
             post_processing_thinking_effort: valid.postProcessingThinkingEffort,

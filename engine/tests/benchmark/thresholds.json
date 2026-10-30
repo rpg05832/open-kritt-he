@@ -1,0 +1,4 @@
+{
+  "minimum_detection_rate": 0.9,
+  "maximum_false_positives": 0
+}

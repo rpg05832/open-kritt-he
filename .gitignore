@@ -78,3 +78,11 @@ local_repos/*
 
 OPEN_SOURCE_READINESS.md
 webinar
+# Verified vendor CLI files added by the wizard (never committed)
+/vendor-cache/*
+!/vendor-cache/.gitkeep
+!/vendor-cache/README.txt
+
+# Public CA certificates approved in the wizard are machine-specific (never committed)
+*/local-certs/*
+!*/local-certs/.gitkeep

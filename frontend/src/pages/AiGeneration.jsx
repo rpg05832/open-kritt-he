@@ -1,3 +1,4 @@
+import HelpTip from '../components/HelpTip.jsx';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client.js';
@@ -383,10 +384,12 @@ function Label({ children, htmlFor }) {
   return htmlFor ? (
     <label htmlFor={htmlFor} className="mono" style={style}>
       {children}
+      <HelpTip term={children} />
     </label>
   ) : (
     <div className="mono" style={style}>
       {children}
+      <HelpTip term={children} />
     </div>
   );
 }

@@ -1,3 +1,8 @@
+import ScanReport from './pages/ScanReport.jsx';
+import Guide from './pages/Guide.jsx';
+import CompareScans from './pages/CompareScans.jsx';
+import Maintenance from './pages/Maintenance.jsx';
+import License from './pages/License.jsx';
 import { createBrowserRouter } from 'react-router-dom';
 import Layout from './components/Layout.jsx';
 import Overview from './pages/Overview.jsx';
@@ -27,6 +32,10 @@ export const router = createBrowserRouter(
       element: <Layout />,
       children: [
         { index: true, element: <Overview /> },
+        { path: 'guide', element: <Guide /> },
+        { path: 'compare', element: <CompareScans /> },
+        { path: 'maintenance', element: <Maintenance /> },
+        { path: 'license', element: <License /> },
         { path: 'workflows', element: <Workflows /> },
         { path: 'workflows/generate', element: <AiGeneration kind="workflow" /> },
         { path: 'workflows/new', element: <WorkflowBuilder /> },
@@ -35,6 +44,7 @@ export const router = createBrowserRouter(
         { path: 'scans', element: <Scans /> },
         { path: 'scans/new', element: <CreateScan /> },
         { path: 'scans/:id', element: <ScanDetail /> },
+        { path: 'scans/:id/report', element: <ScanReport /> },
         { path: 'scans/:scanId/vulnerabilities/:vulnId', element: <VulnerabilityPage /> },
         { path: 'settings', element: <Settings /> },
         { path: 'accounts', element: <Accounts /> },

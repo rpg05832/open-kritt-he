@@ -523,6 +523,9 @@ def _prepare_dependency_snapshot_workspace(
     repo_dir.mkdir(parents=True, exist_ok=True)
     _write_workspace_files(str(repo_dir), manifest, layout, manifest_json)
 
+    from .security_context import prepare_security_context
+    prepare_security_context(primary_cache_checkout, scan, output_root=repo_dir)
+
     image_started = time.perf_counter()
     runner_image = ensure_workspace_snapshot_image(
         base_image=os.getenv("ENGINE_SCAN_RUNNER_IMAGE", "open-kritt-engine:local"),
@@ -640,6 +643,8 @@ def _prepare_dependency_workspace_tree(
     manifest_json = json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True)
     layout = workspace_layout(repo_dir, manifest)
     _write_workspace_files(repo_dir, manifest, layout, manifest_json)
+    from .security_context import prepare_security_context
+    prepare_security_context(repo_dir, scan)
     _add_timing(timings, "manifest_ms", _elapsed_ms(manifest_started))
     return PreparedWorkspaceTree(
         repo_dir=repo_dir,

@@ -1,3 +1,4 @@
+import HelpTip from './HelpTip.jsx';
 import { useId } from 'react';
 import { Link } from 'react-router-dom';
 import SearchSelect from './SearchSelect.jsx';
@@ -294,6 +295,7 @@ function Field({ label, children }) {
         style={{ display: 'block', fontSize: 11.5, color: 'var(--text-2)', marginBottom: 5 }}
       >
         {label}
+        <HelpTip term={label} />
       </label>
       {children(id, label)}
     </div>

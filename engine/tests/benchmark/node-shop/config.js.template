@@ -1,0 +1,5 @@
+// Benchmark project: a payment key committed to the code (filled in at benchmark time).
+module.exports = {
+  currency: 'ILS',
+  stripeKey: '{{SECRET:stripe}}',
+};

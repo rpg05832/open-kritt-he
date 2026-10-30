@@ -1,3 +1,4 @@
+import HelpTip from '../components/HelpTip.jsx';
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, ApiError, apiErrorMessages } from '../api/client.js';
@@ -1446,6 +1447,7 @@ function Label({ children, style, inline }) {
       style={{ fontSize: 10, letterSpacing: '0.07em', color: 'var(--text-3)', marginBottom: inline ? 0 : 8, ...style }}
     >
       {children}
+      <HelpTip term={children} />
     </div>
   );
 }

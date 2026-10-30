@@ -238,6 +238,15 @@ test('lineage summary includes unclaimed fan-out work in the denominator', () =>
   });
 });
 
+test('retries and interruptions never inflate completed workflow task totals', () => {
+  const steps=[{id:10n,depth:0,consumesAll:false,isLastStep:false},{id:20n,depth:1,consumesAll:false,isLastStep:true}];
+  const first={kind:'step',status:'completed',stepId:10n,prevId:null,prevTable:null,repeatRun:1};
+  const child={kind:'step',stepId:20n,prevId:1n,prevTable:'workflows.step_results',repeatRun:1};
+  const metadata=[first,...Array.from({length:14},(_,i)=>({...child,status:i%2?'failed':'interrupted'})),{...child,status:'completed'}];
+  const results=[{id:1n,stepId:10n,prevId:null,prevTable:null,repeatRun:1}];
+  assert.deepEqual(summarizeExpectedWorkflowLineages({configuration:{}},steps,metadata,results),{expectedLineages:2,completedLineages:2});
+});
+
 test('lineage summary repeats each concrete task before exposing accumulated output downstream', () => {
   const scan = { configuration: { repeat_runs: 2 } };
   const steps = [

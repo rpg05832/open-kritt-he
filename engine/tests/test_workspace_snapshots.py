@@ -1,7 +1,22 @@
+import json
 from subprocess import CompletedProcess
 
 import open_kritt_engine.workspace_snapshots as workspace_snapshots
-from open_kritt_engine.workspace_snapshots import workspace_snapshot_image_name, workspace_snapshot_key
+from open_kritt_engine.workspace_snapshots import (
+    security_context_fingerprint,
+    workspace_snapshot_image_name,
+    workspace_snapshot_key,
+)
+
+
+def test_snapshot_tracks_security_scope_but_not_timing(tmp_path):
+    target = tmp_path/'.open-kritt-security-checks.json'
+    target.write_text(json.dumps({'scan_id': '1', 'generated_at': 1, 'semgrep': {'status': 'completed', 'reused': False}}))
+    first = security_context_fingerprint(tmp_path)
+    target.write_text(json.dumps({'scan_id': '1', 'generated_at': 2, 'semgrep': {'status': 'completed', 'reused': True}}))
+    assert security_context_fingerprint(tmp_path) == first
+    target.write_text(json.dumps({'scan_id': '2'}))
+    assert security_context_fingerprint(tmp_path) != first
 
 
 def test_workspace_snapshot_key_is_stable_and_tracks_image_checkout_and_manifest():

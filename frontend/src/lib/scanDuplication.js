@@ -1,6 +1,9 @@
 import { modelOverridesDraft } from './modelOverrides.js';
 
 const CONFIGURATION_RELATION_KEYS = [
+  'scan_mode',
+  'dependency_audit',
+  'incremental_baseline_id',
   'post_script_ids',
   'post_scripts',
   'agent_skill_ids',
@@ -77,6 +80,8 @@ export function scanConfigurationDraft(scan) {
     repo_scope: `${scan.repoScope ?? ''}`,
     dependencies: duplicateDependencies(scan.dependencies),
     configuration: editableConfiguration(scan.configuration),
+    scanMode: scan.configuration?.scan_mode === 'changes' ? 'changes' : 'full',
+    dependencyAudit: scan.configuration?.dependency_audit !== false,
     model: `${scan.model ?? ''}`,
     model_provider: `${scan.modelProvider ?? ''}`,
     harness: `${scan.harness ?? ''}`,

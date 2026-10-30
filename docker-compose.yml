@@ -20,6 +20,10 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      additional_contexts:
+        vendor-cache: ./vendor-cache
+      args:
+        INSTALL_GROK: ${INSTALL_GROK:-0}
     container_name: open-kritt-backend
     ports:
       - '${BACKEND_BIND_ADDRESS:-127.0.0.1}:${BACKEND_PORT:-3002}:3002'
@@ -90,6 +94,11 @@ services:
     build:
       context: ./engine
       dockerfile: Dockerfile
+      additional_contexts:
+        vendor-cache: ./vendor-cache
+      args:
+        INSTALL_CURSOR: ${INSTALL_CURSOR:-0}
+        INSTALL_GROK: ${INSTALL_GROK:-0}
     image: ${ENGINE_IMAGE:-open-kritt-engine:local}
     container_name: open-kritt-engine
     oom_score_adj: -500

@@ -1,0 +1,33 @@
+{
+  "description": "Legacy PHP: file inclusion, SQL and command injection, object injection, committed cloud key",
+  "clean": [
+    "safe.php"
+  ],
+  "expected": [
+    {
+      "tool": "semgrep",
+      "rule": "php-file-inclusion",
+      "file": "index.php"
+    },
+    {
+      "tool": "semgrep",
+      "rule": "php-sql-string-building",
+      "file": "index.php"
+    },
+    {
+      "tool": "semgrep",
+      "rule": "php-unserialize",
+      "file": "index.php"
+    },
+    {
+      "tool": "semgrep",
+      "rule": "php-command-injection",
+      "file": "index.php"
+    },
+    {
+      "tool": "secrets",
+      "rule": "aws-access-token",
+      "file": "aws.ini"
+    }
+  ]
+}

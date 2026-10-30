@@ -1,3 +1,6 @@
+import HelpTip from '../components/HelpTip.jsx';
+import automaticSkills from '../lib/automaticSkills.json';
+import { resourceExplanation } from '../lib/resourceHelp.js';
 import { useNavigate } from 'react-router-dom';
 import { CardLinkOverlay, Spinner, ErrorState, EmptyState, Button } from '../components/ui.jsx';
 import { api } from '../api/client.js';
@@ -87,6 +90,9 @@ export default function AgentSkills() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                   <div className="mono" style={{ fontWeight: 600, fontSize: 14.5 }}>
                     {skill.name}
+                    <span style={{ position: 'relative', zIndex: 3 }}>
+                      <HelpTip term={skill.name} description={resourceExplanation(skill.name, 'skill')} />
+                    </span>
                   </div>
                   <Button
                     variant="ghost"
@@ -126,7 +132,9 @@ export default function AgentSkills() {
                     borderTop: '1px solid var(--border-2)',
                   }}
                 >
-                  {skill.licenseSpdx && <Chip>{skill.licenseSpdx}</Chip>}
+                  {(skill.licenseSpdx || automaticSkills.some((local) => local.slug === skill.slug)) && (
+                    <Chip>{skill.licenseSpdx || 'AGPL-3.0-only'}</Chip>
+                  )}
                   {skill.sourceUrl && (
                     <a
                       href={skill.sourceUrl}

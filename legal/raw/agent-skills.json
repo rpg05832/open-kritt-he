@@ -1,0 +1,261 @@
+﻿[
+    {
+        "slug":  "cloudflare-security-audit",
+        "name":  "Cloudflare security audit",
+        "licenseSpdx":  "MIT",
+        "sourceUrl":  "https://github.com/cloudflare/security-audit-skill/blob/main/SKILL.md",
+        "attribution":  "References Cloudflare security-audit-skill metadata, concise bridge text only."
+    },
+    {
+        "slug":  "github-security-review",
+        "name":  "GitHub security review",
+        "licenseSpdx":  "MIT",
+        "sourceUrl":  "https://github.com/github/awesome-copilot/blob/main/skills/security-review/SKILL.md",
+        "attribution":  "References GitHub awesome-copilot security-review metadata, concise bridge text only."
+    },
+    {
+        "slug":  "pashov-solidity-auditor",
+        "name":  "Pashov Solidity auditor",
+        "licenseSpdx":  "MIT",
+        "sourceUrl":  "https://github.com/pashov/skills/blob/main/solidity-auditor/SKILL.md",
+        "attribution":  "References Pashov Audit Group pashov/skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "pashov-xray",
+        "name":  "Pashov X-Ray",
+        "licenseSpdx":  "MIT",
+        "sourceUrl":  "https://github.com/pashov/skills/blob/main/x-ray/SKILL.md",
+        "attribution":  "References Pashov Audit Group pashov/skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "pashov-fizz",
+        "name":  "Pashov Fizz fuzzing",
+        "licenseSpdx":  "MIT",
+        "sourceUrl":  "https://github.com/pashov/skills/blob/main/fizz/SKILL.md",
+        "attribution":  "References Pashov Audit Group pashov/skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "trail-of-bits-entry-point-analyzer",
+        "name":  "Trail of Bits entry-point analyzer",
+        "licenseSpdx":  "CC-BY-SA-4.0",
+        "sourceUrl":  "https://github.com/trailofbits/skills/blob/main/plugins/entry-point-analyzer/skills/entry-point-analyzer/SKILL.md",
+        "attribution":  "References Trail of Bits skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "trail-of-bits-variant-analysis",
+        "name":  "Trail of Bits variant analysis",
+        "licenseSpdx":  "CC-BY-SA-4.0",
+        "sourceUrl":  "https://github.com/trailofbits/skills/blob/main/plugins/variant-analysis/skills/variant-analysis/SKILL.md",
+        "attribution":  "References Trail of Bits skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "trail-of-bits-static-analysis",
+        "name":  "Trail of Bits static analysis",
+        "licenseSpdx":  "CC-BY-SA-4.0",
+        "sourceUrl":  "https://github.com/trailofbits/skills/tree/main/plugins/static-analysis/skills",
+        "attribution":  "References Trail of Bits skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "trail-of-bits-supply-chain-risk",
+        "name":  "Trail of Bits supply-chain risk",
+        "licenseSpdx":  "CC-BY-SA-4.0",
+        "sourceUrl":  "https://github.com/trailofbits/skills/blob/main/plugins/supply-chain-risk-auditor/skills/supply-chain-risk-auditor/SKILL.md",
+        "attribution":  "References Trail of Bits skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "trail-of-bits-solana-scanner",
+        "name":  "Trail of Bits Solana scanner",
+        "licenseSpdx":  "CC-BY-SA-4.0",
+        "sourceUrl":  "https://github.com/trailofbits/skills/blob/main/plugins/building-secure-contracts/skills/solana-vulnerability-scanner/SKILL.md",
+        "attribution":  "References Trail of Bits skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "sentry-security-review",
+        "name":  "Sentry security review",
+        "licenseSpdx":  "Apache-2.0",
+        "sourceUrl":  "https://github.com/getsentry/skills/blob/main/skills/security-review/SKILL.md",
+        "attribution":  "References Sentry getsentry/skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "sentry-github-actions-security-review",
+        "name":  "Sentry GitHub Actions security review",
+        "licenseSpdx":  "Apache-2.0",
+        "sourceUrl":  "https://github.com/getsentry/skills/blob/main/skills/gha-security-review/SKILL.md",
+        "attribution":  "References Sentry getsentry/skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "sentry-django-access-review",
+        "name":  "Sentry Django access review",
+        "licenseSpdx":  "Apache-2.0",
+        "sourceUrl":  "https://github.com/getsentry/skills/blob/main/skills/django-access-review/SKILL.md",
+        "attribution":  "References Sentry getsentry/skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "factory-security-review",
+        "name":  "Factory security review",
+        "licenseSpdx":  "MIT",
+        "sourceUrl":  "https://github.com/Factory-AI/skills/blob/main/skills/security-review/SKILL.md",
+        "attribution":  "References Factory AI Factory-AI/skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "factory-threat-model-generation",
+        "name":  "Factory threat model generation",
+        "licenseSpdx":  "MIT",
+        "sourceUrl":  "https://github.com/Factory-AI/skills/blob/main/skills/threat-model-generation/SKILL.md",
+        "attribution":  "References Factory AI Factory-AI/skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "factory-vulnerability-validation",
+        "name":  "Factory vulnerability validation",
+        "licenseSpdx":  "MIT",
+        "sourceUrl":  "https://github.com/Factory-AI/skills/blob/main/skills/vulnerability-validation/SKILL.md",
+        "attribution":  "References Factory AI Factory-AI/skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "factory-commit-security-scan",
+        "name":  "Factory commit security scan",
+        "licenseSpdx":  "MIT",
+        "sourceUrl":  "https://github.com/Factory-AI/skills/blob/main/skills/commit-security-scan/SKILL.md",
+        "attribution":  "References Factory AI Factory-AI/skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "netresearch-security-audit",
+        "name":  "Netresearch security audit",
+        "licenseSpdx":  "MIT AND CC-BY-SA-4.0",
+        "sourceUrl":  "https://github.com/netresearch/security-audit-skill/blob/main/skills/security-audit/SKILL.md",
+        "attribution":  "References Netresearch security-audit-skill metadata, concise bridge text only."
+    },
+    {
+        "slug":  "trail-of-bits-agentic-actions-auditor",
+        "name":  "Trail of Bits agentic actions auditor",
+        "licenseSpdx":  "CC-BY-SA-4.0",
+        "sourceUrl":  "https://github.com/trailofbits/skills/blob/main/plugins/agentic-actions-auditor/skills/agentic-actions-auditor/SKILL.md",
+        "attribution":  "References Trail of Bits skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "trail-of-bits-audit-context-building",
+        "name":  "Trail of Bits audit context building",
+        "licenseSpdx":  "CC-BY-SA-4.0",
+        "sourceUrl":  "https://github.com/trailofbits/skills/blob/main/plugins/audit-context-building/skills/audit-context-building/SKILL.md",
+        "attribution":  "References Trail of Bits skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "trail-of-bits-burpsuite-project-parser",
+        "name":  "Trail of Bits Burp Suite project parser",
+        "licenseSpdx":  "CC-BY-SA-4.0",
+        "sourceUrl":  "https://github.com/trailofbits/skills/blob/main/plugins/burpsuite-project-parser/skills/burpsuite-project-parser/SKILL.md",
+        "attribution":  "References Trail of Bits skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "trail-of-bits-c-review",
+        "name":  "Trail of Bits C/C++ review",
+        "licenseSpdx":  "CC-BY-SA-4.0",
+        "sourceUrl":  "https://github.com/trailofbits/skills/blob/main/plugins/c-review/skills/c-review/SKILL.md",
+        "attribution":  "References Trail of Bits skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "trail-of-bits-constant-time-analysis",
+        "name":  "Trail of Bits constant-time analysis",
+        "licenseSpdx":  "CC-BY-SA-4.0",
+        "sourceUrl":  "https://github.com/trailofbits/skills/blob/main/plugins/constant-time-analysis/skills/constant-time-analysis/SKILL.md",
+        "attribution":  "References Trail of Bits skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "trail-of-bits-fp-check",
+        "name":  "Trail of Bits false-positive check",
+        "licenseSpdx":  "CC-BY-SA-4.0",
+        "sourceUrl":  "https://github.com/trailofbits/skills/blob/main/plugins/fp-check/skills/fp-check/SKILL.md",
+        "attribution":  "References Trail of Bits skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "trail-of-bits-insecure-defaults",
+        "name":  "Trail of Bits insecure defaults",
+        "licenseSpdx":  "CC-BY-SA-4.0",
+        "sourceUrl":  "https://github.com/trailofbits/skills/blob/main/plugins/insecure-defaults/skills/insecure-defaults/SKILL.md",
+        "attribution":  "References Trail of Bits skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "trail-of-bits-semgrep-rule-creator",
+        "name":  "Trail of Bits Semgrep rule creator",
+        "licenseSpdx":  "CC-BY-SA-4.0",
+        "sourceUrl":  "https://github.com/trailofbits/skills/blob/main/plugins/semgrep-rule-creator/skills/semgrep-rule-creator/SKILL.md",
+        "attribution":  "References Trail of Bits skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "trail-of-bits-fuzzing-harness-writing",
+        "name":  "Trail of Bits fuzzing harness writing",
+        "licenseSpdx":  "CC-BY-SA-4.0",
+        "sourceUrl":  "https://github.com/trailofbits/skills/blob/main/plugins/testing-handbook-skills/skills/harness-writing/SKILL.md",
+        "attribution":  "References Trail of Bits skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "trail-of-bits-libfuzzer",
+        "name":  "Trail of Bits libFuzzer",
+        "licenseSpdx":  "CC-BY-SA-4.0",
+        "sourceUrl":  "https://github.com/trailofbits/skills/blob/main/plugins/testing-handbook-skills/skills/libfuzzer/SKILL.md",
+        "attribution":  "References Trail of Bits skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "trail-of-bits-yara-rule-authoring",
+        "name":  "Trail of Bits YARA rule authoring",
+        "licenseSpdx":  "CC-BY-SA-4.0",
+        "sourceUrl":  "https://github.com/trailofbits/skills/blob/main/plugins/yara-authoring/skills/yara-rule-authoring/SKILL.md",
+        "attribution":  "References Trail of Bits skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "trail-of-bits-zeroize-audit",
+        "name":  "Trail of Bits zeroize audit",
+        "licenseSpdx":  "CC-BY-SA-4.0",
+        "sourceUrl":  "https://github.com/trailofbits/skills/blob/main/plugins/zeroize-audit/skills/zeroize-audit/SKILL.md",
+        "attribution":  "References Trail of Bits skills metadata, concise bridge text only."
+    },
+    {
+        "slug":  "he-auth-review",
+        "name":  "הרשאות וכניסה לחשבון",
+        "licenseSpdx":  null,
+        "sourceUrl":  null,
+        "attribution":  "הוראות מקומיות שנכתבו להתאמה זו; אינן כלי סריקה עצמאי ואינן מיומנות upstream מלאה."
+    },
+    {
+        "slug":  "he-input-files",
+        "name":  "קלט, קבצים והזרקות",
+        "licenseSpdx":  null,
+        "sourceUrl":  null,
+        "attribution":  "הוראות מקומיות שנכתבו להתאמה זו; אינן כלי סריקה עצמאי ואינן מיומנות upstream מלאה."
+    },
+    {
+        "slug":  "he-secrets-crypto",
+        "name":  "סודות, הצפנה ופרטיות",
+        "licenseSpdx":  null,
+        "sourceUrl":  null,
+        "attribution":  "הוראות מקומיות שנכתבו להתאמה זו; אינן כלי סריקה עצמאי ואינן מיומנות upstream מלאה."
+    },
+    {
+        "slug":  "he-supply-chain",
+        "name":  "תלויות ושרשרת אספקה",
+        "licenseSpdx":  null,
+        "sourceUrl":  null,
+        "attribution":  "הוראות מקומיות שנכתבו להתאמה זו; אינן כלי סריקה עצמאי ואינן מיומנות upstream מלאה."
+    },
+    {
+        "slug":  "he-business-logic",
+        "name":  "לוגיקה עסקית ופעולות מקבילות",
+        "licenseSpdx":  null,
+        "sourceUrl":  null,
+        "attribution":  "הוראות מקומיות שנכתבו להתאמה זו; אינן כלי סריקה עצמאי ואינן מיומנות upstream מלאה."
+    },
+    {
+        "slug":  "he-platform-config",
+        "name":  "תצורה ופריסה",
+        "licenseSpdx":  null,
+        "sourceUrl":  null,
+        "attribution":  "הוראות מקומיות שנכתבו להתאמה זו; אינן כלי סריקה עצמאי ואינן מיומנות upstream מלאה."
+    },
+    {
+        "slug":  "he-verify-coverage",
+        "name":  "אימות ממצאים ותיעוד כיסוי",
+        "licenseSpdx":  null,
+        "sourceUrl":  null,
+        "attribution":  "הוראות מקומיות שנכתבו להתאמה זו; אינן כלי סריקה עצמאי ואינן מיומנות upstream מלאה."
+    }
+]

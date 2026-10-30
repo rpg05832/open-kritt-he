@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: py-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: py-api
+  template:
+    metadata:
+      labels:
+        app: py-api
+    spec:
+      hostNetwork: true
+      containers:
+        - name: api
+          image: example/py-api:latest
+          securityContext:
+            privileged: true

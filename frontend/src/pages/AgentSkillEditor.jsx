@@ -1,3 +1,4 @@
+import HelpTip from '../components/HelpTip.jsx';
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api, ApiError, apiErrorMessages } from '../api/client.js';
@@ -287,8 +288,10 @@ function Field({ label, children }) {
     <div>
       <div className="mono" style={{ fontSize: 11.5, color: 'var(--text-2)', marginBottom: 5 }}>
         {label}
+        <HelpTip term={label} />
       </div>
       {children}
+      <HelpTip term={children} />
     </div>
   );
 }

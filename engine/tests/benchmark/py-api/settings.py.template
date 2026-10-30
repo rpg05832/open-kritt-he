@@ -1,0 +1,3 @@
+# Benchmark project: a GitHub token committed to the code (filled in at benchmark time).
+GITHUB_ORG = 'example'
+GITHUB_TOKEN = '{{SECRET:github}}'

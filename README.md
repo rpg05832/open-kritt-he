@@ -144,3 +144,10 @@ Please report security vulnerabilities privately by following [SECURITY.md](SECU
 ## License
 
 open·kritt is licensed under the [GNU Affero General Public License v3.0](LICENSE).
+
+
+## Hebrew adaptation credit
+
+הגרסה העברית, התוספות והשיפורים בוצעו על ידי [@ארי ממתמחים טופ](https://mitmachim.top/user/%D7%90%D7%A8%D7%99). יצירת קשר: [rpg05832@gmail.com](mailto:rpg05832@gmail.com).
+
+Modified 2026-10-29. Independent AGPL-3.0-only adaptation; see [NOTICE.md](NOTICE.md), [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), and [license review](legal/REVIEW-he.md). Proprietary CLI/image redistribution is not cleared.

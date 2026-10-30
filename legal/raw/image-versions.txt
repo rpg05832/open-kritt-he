@@ -1,0 +1,5 @@
+﻿/open-kritt-engine|open-kritt-engine:local|sha256:39aa578d65bbc49930de65fd4688b4243ddd9b8959f88bc4ced72883294c1bb4
+/open-kritt-backend|openkritt-he-backend|sha256:f3375e099f4eb335bd2be8960a71ceb8dc21bd2da8d5e875a2c244cd8f6afeb4
+/open-kritt-frontend|openkritt-he-frontend|sha256:4f2fb46261bd8c55e13555b43912c69140d58f3a84bc8f371baf6e760ecf5ae2
+/open-kritt-db|openkritt-he-db|sha256:363425acabbe5dec2e79ecd42e43bfc0dcb2752cd6dd895f3f498f79ba9b0652
+/open-kritt-executor-view|openkritt-he-executor-view|sha256:1ecbe9ca613b6f4e9a8f968a6c2cbeeb468eaf0bccf32056f208ec2796d4f782

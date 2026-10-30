@@ -1,3 +1,5 @@
+import HelpTip from '../components/HelpTip.jsx';
+import { resourceExplanation } from '../lib/resourceHelp.js';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, ApiError, apiErrorMessages } from '../api/client.js';
@@ -175,6 +177,9 @@ export function WorkflowCard({ workflow: w, busy, deleting, onDelete }) {
         <div>
           <div className="mono" style={{ fontWeight: 600, fontSize: 15.5 }}>
             {w.name}
+            <span style={{ position: 'relative', zIndex: 3 }}>
+              <HelpTip term={w.name} description={resourceExplanation(w.name, 'workflow')} />
+            </span>
           </div>
           <div style={{ fontSize: 13, color: 'var(--text-2)', marginTop: 5, maxWidth: 320 }}>{w.description}</div>
         </div>
@@ -396,6 +401,9 @@ function NewWorkflowDialog({ workflows, onClose, onImport, importing, importErro
                         }}
                       >
                         {w.name}
+                        <span style={{ position: 'relative', zIndex: 3 }}>
+                          <HelpTip term={w.name} description={resourceExplanation(w.name, 'workflow')} />
+                        </span>
                       </div>
                       {w.description && (
                         <div

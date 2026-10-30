@@ -764,7 +764,7 @@ export async function statusSummariesByScan(scans, stepsMap, workflowsById) {
     summary.completedStepLineages = summary.stepCompletedAttempts;
   }
 
-  const activeScans = scans.filter((scan) => ['running', 'rate_limited', 'paused', 'failed'].includes(scan.status));
+  const activeScans = scans.filter((scan) => ['running', 'rate_limited', 'paused', 'failed', 'completed', 'stopped', 'post_processing'].includes(scan.status) && workflowsById.has(scan.workflowId?.toString()));
   if (activeScans.length) {
     const activeIds = activeScans.map((scan) => scan.id);
     const [lineageMetadata, lineageResults] = await Promise.all([

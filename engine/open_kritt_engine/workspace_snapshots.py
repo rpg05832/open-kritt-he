@@ -173,6 +173,24 @@ def _ensure_snapshot_lease(image: str, key: str):
     )
 
 
+def security_context_fingerprint(workspace_files_dir):
+    def stable(value):
+        if isinstance(value, dict):
+            return {key: stable(item) for key, item in value.items()
+                    if key not in {'generated_at', 'duration_seconds', 'reused'}}
+        if isinstance(value, list):
+            return [stable(item) for item in value]
+        return value
+    artifacts = {}
+    for filename in ('.open-kritt-security-checks.json', '.open-kritt-changes.json'):
+        source = Path(workspace_files_dir) / filename
+        if source.is_file() and not source.is_symlink():
+            artifacts[filename] = stable(json.loads(source.read_text(encoding='utf-8')))
+    if not artifacts:
+        return None
+    return hashlib.sha256(json.dumps(artifacts, sort_keys=True).encode()).hexdigest()
+
+
 def ensure_workspace_snapshot_image(
     *,
     base_image: str,
@@ -183,6 +201,9 @@ def ensure_workspace_snapshot_image(
     scan_id: int | str | None = None,
 ) -> str:
     base_id = _base_image_id(base_image)
+    security_fingerprint = security_context_fingerprint(workspace_files_dir)
+    if security_fingerprint:
+        checkout_key = json.dumps({'checkout': checkout_key, 'security': security_fingerprint}, sort_keys=True)
     key = workspace_snapshot_key(
         base_image_id=base_id,
         checkout_key=checkout_key,
@@ -228,6 +249,10 @@ def ensure_workspace_snapshot_image(
                     ["cp", str(source_file), f"{builder}:/workspace/{filename}"],
                     timeout_seconds=60,
                 )
+            for filename in ('.open-kritt-security-checks.json', '.open-kritt-changes.json'):
+                source_file = Path(workspace_files_dir) / filename
+                if source_file.is_file() and not source_file.is_symlink():
+                    _run_docker(['cp', str(source_file), f'{builder}:/workspace/{filename}'], timeout_seconds=60)
             changes = [
                 "--change",
                 "WORKDIR /workspace",

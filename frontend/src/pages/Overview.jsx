@@ -4,7 +4,7 @@ import { useFetch } from '../lib/useFetch.js';
 import { usePageChrome } from '../context/ui.jsx';
 import { Spinner, ErrorState, StatusBadge } from '../components/ui.jsx';
 
-const todayLabel = () => new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+const todayLabel = () => new Date().toLocaleDateString(import.meta.env.VITE_UI_LANGUAGE === 'he' ? 'he-IL' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
 export default function Overview() {
   usePageChrome([{ label: 'Overview', active: true }], null, []);
@@ -23,7 +23,7 @@ export default function Overview() {
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 26 }}>
             <Kpi label="Workflows" value={data.workflowCount} sub="blueprints defined" />
-            <Kpi label="Scans" value={data.scanCount} sub={`${data.runningCount} running now`} />
+            <Kpi label="Scans" value={data.scanCount} sub={`${data.runningCount} פעילות כעת`} />
             <Kpi label="Findings" value={data.findingsCount} sub="across all scans" color="var(--accent)" />
             <Kpi label="Exploitable" value={data.exploitableCount} sub="confirmed by final pass" color="var(--fail)" />
           </div>

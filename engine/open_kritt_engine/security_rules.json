@@ -1,0 +1,80 @@
+{
+  "rules": [
+    {"id":"python-shell-command","languages":["python"],"severity":"WARNING","message":"פקודת מערכת עם shell=True: יש לבדוק אם הקלט נשלט מבחוץ","pattern":"subprocess.$FUNC(..., shell=True, ...)"},
+    {"id":"python-unsafe-pickle","languages":["python"],"severity":"WARNING","message":"טעינת pickle: יש לוודא שהנתונים ממקור מהימן","pattern-either":[{"pattern":"pickle.loads(...)"},{"pattern":"pickle.load(...)"}]},
+    {"id":"javascript-dynamic-eval","languages":["javascript","typescript"],"severity":"WARNING","message":"הרצת קוד דינמי: יש לבדוק את מקור הקלט","pattern":"eval(...)"},
+    {"id":"javascript-tls-disabled","languages":["javascript","typescript"],"severity":"WARNING","message":"אימות תעודת TLS הושבת","pattern":"{..., rejectUnauthorized: false, ...}"},
+
+    {"id":"python-sql-string-building","languages":["python"],"severity":"ERROR","message":"שאילתת SQL נבנית מחרוזת עם נתונים: חשד להזרקת SQL. יש להשתמש בפרמטרים","pattern-either":[
+      {"pattern":"$C.execute(f\"...\", ...)"},{"pattern":"$C.execute(\"...\" % $X, ...)"},{"pattern":"$C.execute(\"...\".format(...), ...)"},{"pattern":"$C.execute(\"...\" + $X, ...)"},
+      {"pattern":"$C.executemany(f\"...\", ...)"},{"pattern":"$C.execute(text(f\"...\"), ...)"}]},
+    {"id":"python-yaml-unsafe-load","languages":["python"],"severity":"ERROR","message":"yaml.load ללא SafeLoader מאפשר יצירת אובייקטים שרירותיים. יש להשתמש ב־yaml.safe_load","patterns":[
+      {"pattern":"yaml.load(...)"},{"pattern-not":"yaml.load(..., Loader=yaml.SafeLoader, ...)"},{"pattern-not":"yaml.load(..., Loader=yaml.CSafeLoader, ...)"},{"pattern-not":"yaml.load(..., Loader=SafeLoader, ...)"}]},
+    {"id":"python-tls-verify-disabled","languages":["python"],"severity":"ERROR","message":"בדיקת תעודת TLS הושבתה (verify=False): חשוף להתחזות לשרת","pattern-either":[
+      {"pattern":"requests.$F(..., verify=False, ...)"},{"pattern":"httpx.$F(..., verify=False, ...)"},{"pattern":"ssl._create_unverified_context(...)"}]},
+    {"id":"python-os-command","languages":["python"],"severity":"WARNING","message":"הרצת פקודת מערכת עם ערך משתנה: יש לבדוק אם הקלט נשלט מבחוץ","patterns":[
+      {"pattern-either":[{"pattern":"os.system($X)"},{"pattern":"os.popen($X, ...)"}]},{"pattern-not":"os.system(\"...\")"},{"pattern-not":"os.popen(\"...\", ...)"}]},
+    {"id":"python-dynamic-code","languages":["python"],"severity":"WARNING","message":"הרצת קוד דינמי (eval/exec) עם ערך משתנה","patterns":[
+      {"pattern-either":[{"pattern":"eval($X, ...)"},{"pattern":"exec($X, ...)"}]},{"pattern-not":"eval(\"...\", ...)"},{"pattern-not":"exec(\"...\", ...)"}]},
+    {"id":"python-flask-debug","languages":["python"],"severity":"WARNING","message":"Flask במצב debug מאפשר הרצת קוד מרחוק אם השרת חשוף","pattern":"$APP.run(..., debug=True, ...)"},
+    {"id":"python-jinja-autoescape-off","languages":["python"],"severity":"WARNING","message":"תבניות Jinja בלי autoescape: חשד ל־XSS","pattern":"jinja2.Environment(..., autoescape=False, ...)"},
+    {"id":"python-insecure-tempfile","languages":["python"],"severity":"WARNING","message":"tempfile.mktemp חשוף למרוץ על שם הקובץ. יש להשתמש ב־NamedTemporaryFile או mkstemp","pattern":"tempfile.mktemp(...)"},
+    {"id":"python-weak-password-hash","languages":["python"],"severity":"INFO","message":"MD5/SHA1 אינם מתאימים לסיסמאות או לחתימות. אם מדובר בסיסמה, יש להשתמש ב־bcrypt/argon2","pattern-either":[{"pattern":"hashlib.md5(...)"},{"pattern":"hashlib.sha1(...)"}]},
+    {"id":"python-unsafe-deserialization","languages":["python"],"severity":"WARNING","message":"פענוח נתונים שעלול להריץ קוד (marshal/shelve/dill/jsonpickle). יש לוודא מקור מהימן","pattern-either":[
+      {"pattern":"marshal.loads(...)"},{"pattern":"shelve.open(...)"},{"pattern":"dill.loads(...)"},{"pattern":"jsonpickle.decode(...)"}]},
+
+    {"id":"javascript-command-injection","languages":["javascript","typescript"],"severity":"ERROR","message":"פקודת מערכת נבנית ממחרוזת עם נתונים: חשד להזרקת פקודה. יש להשתמש ב־execFile עם מערך ארגומנטים","patterns":[
+      {"pattern-either":[{"pattern":"$CP.exec($X + $Y, ...)"},{"pattern":"$CP.exec(`...${$X}...`, ...)"},{"pattern":"$CP.execSync($X + $Y, ...)"},{"pattern":"$CP.execSync(`...${$X}...`, ...)"},
+        {"pattern":"exec($X + $Y, ...)"},{"pattern":"exec(`...${$X}...`, ...)"},{"pattern":"execSync($X + $Y, ...)"},{"pattern":"execSync(`...${$X}...`, ...)"}]}]},
+    {"id":"javascript-new-function","languages":["javascript","typescript"],"severity":"WARNING","message":"new Function מריץ קוד דינמי: יש לבדוק את מקור הקלט","patterns":[{"pattern":"new Function(...)"}]},
+    {"id":"javascript-innerhtml","languages":["javascript","typescript"],"severity":"WARNING","message":"הכנסת HTML לדף עם ערך משתנה: חשד ל־XSS. יש להשתמש ב־textContent או בסינון","patterns":[
+      {"pattern-either":[{"pattern":"$EL.innerHTML = $X"},{"pattern":"$EL.outerHTML = $X"},{"pattern":"$EL.insertAdjacentHTML($P, $X)"},{"pattern":"document.write($X)"}]},
+      {"pattern-not":"$EL.innerHTML = \"...\""},{"pattern-not":"$EL.innerHTML = ''"}]},
+    {"id":"javascript-react-dangerous-html","languages":["javascript","typescript"],"severity":"WARNING","message":"dangerouslySetInnerHTML: יש לוודא שהתוכן מסונן (למשל DOMPurify)","pattern-either":[
+      {"pattern":"<$T dangerouslySetInnerHTML={$X} />"},{"pattern":"<$T dangerouslySetInnerHTML={$X}>...</$T>"}]},
+    {"id":"javascript-sql-string-building","languages":["javascript","typescript"],"severity":"ERROR","message":"שאילתת SQL נבנית מחרוזת עם נתונים: חשד להזרקת SQL. יש להשתמש בפרמטרים","pattern-either":[
+      {"pattern":"$DB.query(\"...\" + $X, ...)"},{"pattern":"$DB.query(`...${$X}...`, ...)"},{"pattern":"$DB.execute(\"...\" + $X, ...)"},{"pattern":"$DB.execute(`...${$X}...`, ...)"},
+      {"pattern":"$DB.raw(`...${$X}...`, ...)"},{"pattern":"$DB.$queryRawUnsafe(...)"},{"pattern":"$DB.$executeRawUnsafe(...)"}]},
+    {"id":"javascript-path-from-request","languages":["javascript","typescript"],"severity":"WARNING","message":"נתיב קובץ נלקח מהבקשה: חשד לגישה לקבצים מחוץ לתיקייה (Path Traversal)","patterns":[
+      {"pattern-either":[{"pattern":"$FS.$FUNC(<... $REQ.query ...>, ...)"},{"pattern":"$FS.$FUNC(<... $REQ.params ...>, ...)"},{"pattern":"$FS.$FUNC(<... $REQ.body ...>, ...)"},{"pattern":"$RES.sendFile(<... $REQ.query ...>, ...)"},{"pattern":"$RES.sendFile(<... $REQ.params ...>, ...)"}]},
+      {"metavariable-regex":{"metavariable":"$FUNC","regex":"^(readFile|readFileSync|createReadStream|writeFile|writeFileSync|unlink|unlinkSync|rm|rmSync|sendFile|appendFile|appendFileSync)$"}}]},
+    {"id":"javascript-open-redirect","languages":["javascript","typescript"],"severity":"WARNING","message":"הפניה לכתובת שנלקחה מהבקשה: חשד להפניה פתוחה (Open Redirect)","pattern-either":[
+      {"pattern":"$RES.redirect(<... $REQ.query ...>)"},{"pattern":"$RES.redirect(<... $REQ.params ...>)"},{"pattern":"$RES.redirect(<... $REQ.body ...>)"}]},
+    {"id":"javascript-tls-env-disabled","languages":["javascript","typescript"],"severity":"ERROR","message":"NODE_TLS_REJECT_UNAUTHORIZED=0 מבטל בדיקת תעודות לכל התהליך","pattern-either":[
+      {"pattern":"process.env.NODE_TLS_REJECT_UNAUTHORIZED = \"0\""},{"pattern":"process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'"},{"pattern":"process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0'"}]},
+    {"id":"javascript-jwt-no-verify","languages":["javascript","typescript"],"severity":"WARNING","message":"jwt.decode אינו בודק חתימה. לאימות משתמש יש להשתמש ב־jwt.verify","pattern":"jwt.decode(...)"},
+    {"id":"javascript-insecure-random-secret","languages":["javascript","typescript"],"severity":"INFO","message":"Math.random אינו מתאים לאסימונים או סיסמאות. יש להשתמש ב־crypto.randomBytes/randomUUID","patterns":[
+      {"pattern":"$V = <... Math.random() ...>"},{"metavariable-regex":{"metavariable":"$V","regex":"(?i).*(token|secret|password|passwd|nonce|salt|key|otp).*"}}]},
+
+    {"id":"php-command-injection","languages":["php"],"severity":"ERROR","message":"פקודת מערכת עם קלט מהבקשה: חשד להזרקת פקודה","patterns":[
+      {"pattern-either":[{"pattern":"$F(<... $_GET ...>, ...)"},{"pattern":"$F(<... $_POST ...>, ...)"},{"pattern":"$F(<... $_REQUEST ...>, ...)"},{"pattern":"$F(<... $_COOKIE ...>, ...)"}]},
+      {"metavariable-regex":{"metavariable":"$F","regex":"^(system|exec|shell_exec|passthru|popen|proc_open|pcntl_exec)$"}}]},
+    {"id":"php-code-injection","languages":["php"],"severity":"ERROR","message":"הרצת קוד דינמי (eval/assert/create_function)","pattern-either":[{"pattern":"eval(...)"},{"pattern":"assert($X)"},{"pattern":"create_function(...)"}]},
+    {"id":"php-unserialize","languages":["php"],"severity":"ERROR","message":"unserialize על נתונים משתנים מאפשר הזרקת אובייקטים. יש להשתמש ב־json_decode","patterns":[{"pattern":"unserialize($X, ...)"},{"pattern-not":"unserialize(\"...\", ...)"}]},
+    {"id":"php-sql-string-building","languages":["php"],"severity":"ERROR","message":"שאילתת SQL נבנית מחרוזת עם נתונים: חשד להזרקת SQL. יש להשתמש בשאילתות מוכנות","pattern-either":[
+      {"pattern":"$DB->query(\"...\" . $X, ...)"},{"pattern":"mysqli_query($C, \"...\" . $X, ...)"},{"pattern":"$DB->query(\"...$X...\", ...)"},{"pattern":"mysqli_query($C, \"...$X...\", ...)"},{"pattern":"$DB->exec(\"...\" . $X)"}]},
+    {"id":"php-file-inclusion","languages":["php"],"severity":"ERROR","message":"הכללת קובץ לפי קלט מהבקשה: חשד להכללת קובץ זדוני","patterns":[{"pattern-either":[{"pattern":"include(<... $_GET ...>);"},{"pattern":"include(<... $_POST ...>);"},{"pattern":"include(<... $_REQUEST ...>);"},{"pattern":"include(<... $_COOKIE ...>);"},{"pattern":"require(<... $_GET ...>);"},{"pattern":"require(<... $_POST ...>);"},{"pattern":"require(<... $_REQUEST ...>);"},{"pattern":"require(<... $_COOKIE ...>);"},{"pattern":"include_once(<... $_GET ...>);"},{"pattern":"include_once(<... $_POST ...>);"},{"pattern":"include_once(<... $_REQUEST ...>);"},{"pattern":"include_once(<... $_COOKIE ...>);"},{"pattern":"require_once(<... $_GET ...>);"},{"pattern":"require_once(<... $_POST ...>);"},{"pattern":"require_once(<... $_REQUEST ...>);"},{"pattern":"require_once(<... $_COOKIE ...>);"}]},{"pattern-not":"include($ALLOWED[$KEY] ?? $DEFAULT);"},{"pattern-not":"require($ALLOWED[$KEY] ?? $DEFAULT);"},{"pattern-not":"include_once($ALLOWED[$KEY] ?? $DEFAULT);"},{"pattern-not":"require_once($ALLOWED[$KEY] ?? $DEFAULT);"}]},
+
+    {"id":"java-command-injection","languages":["java"],"severity":"WARNING","message":"Runtime.exec עם ערך משתנה: יש לבדוק אם הקלט נשלט מבחוץ","patterns":[{"pattern":"Runtime.getRuntime().exec($X, ...)"},{"pattern-not":"Runtime.getRuntime().exec(\"...\", ...)"}]},
+    {"id":"java-sql-string-building","languages":["java"],"severity":"ERROR","message":"שאילתת SQL נבנית מחרוזת עם נתונים: חשד להזרקת SQL. יש להשתמש ב־PreparedStatement","patterns":[
+      {"pattern-either":[{"pattern":"$S.executeQuery(\"...\" + $X)"},{"pattern":"$S.execute(\"...\" + $X)"},{"pattern":"$S.executeUpdate(\"...\" + $X)"},{"pattern":"$C.prepareStatement(\"...\" + $X)"},{"pattern":"$EM.createQuery(\"...\" + $X, ...)"},{"pattern":"$EM.createNativeQuery(\"...\" + $X, ...)"}]}]},
+    {"id":"java-unsafe-deserialization","languages":["java"],"severity":"WARNING","message":"ObjectInputStream מפענח אובייקטים ועלול להריץ קוד. יש לוודא מקור מהימן או מסנן מחלקות","pattern":"new ObjectInputStream(...)"},
+    {"id":"java-weak-cipher","languages":["java"],"severity":"WARNING","message":"הצפנה חלשה (DES/RC4/ECB)","patterns":[{"pattern":"Cipher.getInstance($A, ...)"},{"metavariable-regex":{"metavariable":"$A","regex":"(?i)\"(DES|DESede|RC4|ARCFOUR|.*/ECB/.*|AES)\""}}]},
+
+    {"id":"go-tls-verify-disabled","languages":["go"],"severity":"ERROR","message":"InsecureSkipVerify מבטל בדיקת תעודת TLS","pattern":"tls.Config{..., InsecureSkipVerify: true, ...}"},
+    {"id":"go-sql-string-building","languages":["go"],"severity":"ERROR","message":"שאילתת SQL נבנית עם fmt.Sprintf או שרשור: חשד להזרקת SQL. יש להשתמש בפרמטרים","patterns":[
+      {"pattern-either":[{"pattern":"$DB.$Q(fmt.Sprintf(...), ...)"},{"pattern":"$DB.$Q(\"...\" + $X, ...)"}]},
+      {"metavariable-regex":{"metavariable":"$Q","regex":"^(Query|QueryRow|Exec|QueryContext|QueryRowContext|ExecContext)$"}}]},
+    {"id":"go-shell-command","languages":["go"],"severity":"WARNING","message":"הרצת shell עם ערך משתנה: יש לבדוק אם הקלט נשלט מבחוץ","patterns":[
+      {"pattern-either":[{"pattern":"exec.Command(\"sh\", \"-c\", $X)"},{"pattern":"exec.Command(\"bash\", \"-c\", $X)"},{"pattern":"exec.CommandContext($CTX, \"sh\", \"-c\", $X)"}]},
+      {"pattern-not":"exec.Command(\"sh\", \"-c\", \"...\")"},{"pattern-not":"exec.Command(\"bash\", \"-c\", \"...\")"}]},
+
+    {"id":"csharp-sql-string-building","languages":["csharp"],"severity":"ERROR","message":"שאילתת SQL נבנית מחרוזת עם נתונים: חשד להזרקת SQL. יש להשתמש בפרמטרים","pattern-either":[
+      {"pattern":"new SqlCommand(\"...\" + $X, ...)"},{"pattern":"new SqlCommand($\"...\", ...)"},{"pattern":"$CTX.Database.ExecuteSqlRaw(\"...\" + $X, ...)"},{"pattern":"$CTX.Database.ExecuteSqlRaw($\"...\", ...)"}]},
+    {"id":"csharp-unsafe-deserialization","languages":["csharp"],"severity":"ERROR","message":"BinaryFormatter/NetDataContractSerializer מפענחים אובייקטים באופן לא בטוח","pattern-either":[{"pattern":"new BinaryFormatter()"},{"pattern":"new NetDataContractSerializer()"},{"pattern":"new LosFormatter()"}]},
+
+    {"id":"ruby-dynamic-code","languages":["ruby"],"severity":"WARNING","message":"הרצת קוד דינמי (eval/instance_eval) עם ערך משתנה","patterns":[{"pattern-either":[{"pattern":"eval($X)"},{"pattern":"instance_eval($X)"},{"pattern":"class_eval($X)"}]},{"pattern-not":"eval(\"...\")"}]},
+    {"id":"ruby-command-interpolation","languages":["ruby"],"severity":"ERROR","message":"פקודת מערכת עם ערך משולב במחרוזת: חשד להזרקת פקודה","pattern-either":[{"pattern":"system(\"...#{$X}...\")"},{"pattern":"exec(\"...#{$X}...\")"},{"pattern":"`...#{$X}...`"}]},
+    {"id":"ruby-unsafe-yaml","languages":["ruby"],"severity":"ERROR","message":"YAML.load ללא הגבלה מאפשר יצירת אובייקטים שרירותיים. יש להשתמש ב־YAML.safe_load","pattern":"YAML.load(...)"}
+  ]
+}

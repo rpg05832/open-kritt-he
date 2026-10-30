@@ -1,0 +1,211 @@
+html[dir='rtl'] .app-shell {
+  font-family: 'Segoe UI', Arial, sans-serif !important;
+}
+html[dir='rtl'] [style*='text-align: left'] {
+  text-align: start !important;
+}
+html[dir='rtl'] .mono {
+  letter-spacing: normal !important;
+}
+html[dir='rtl'] pre,
+html[dir='rtl'] code,
+html[dir='rtl'] textarea,
+html[dir='rtl'] input[type='url'] {
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: isolate;
+}
+.hebrew-help {
+  padding: 12px 24px;
+  background: var(--surface);
+  border-block-end: 1px solid var(--border);
+  line-height: 1.7;
+}
+.hebrew-help summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+.hebrew-help p {
+  max-width: 900px;
+}
+
+.hebrew-help ol {
+  max-width: 1000px;
+  padding-inline-start: 24px;
+}
+.hebrew-help li {
+  margin-block: 8px;
+}
+.hebrew-help a,
+.user-guide a {
+  color: var(--accent);
+}
+.user-guide {
+  max-width: 1080px;
+  margin-inline: auto;
+  padding: 24px 32px 80px;
+  line-height: 1.85;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+.user-guide h1 {
+  font-size: 30px;
+}
+.guide-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-block: 24px;
+}
+.guide-toc a {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-decoration: none;
+}
+.user-guide section {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 22px;
+  margin-block: 20px;
+  scroll-margin-block-start: 20px;
+}
+.user-guide h2 {
+  font-size: 22px;
+  margin-block: 0 10px;
+}
+.user-guide li {
+  margin-block: 12px;
+}
+
+.auto-plan {
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 18px;
+  background: var(--accent-subtle);
+  line-height: 1.8;
+  margin-block: 18px;
+}
+.create-scan-content > details {
+  border: 1px solid var(--border);
+  padding: 14px;
+  border-radius: 10px;
+  margin-block: 16px;
+}
+.create-scan-content > details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  margin-block-end: 12px;
+}
+
+.help-tip {
+  display: inline-block;
+  position: relative;
+  margin-inline-start: 7px;
+  vertical-align: middle;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.help-tip > button {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  color: var(--accent);
+  background: var(--surface);
+  cursor: help;
+  font-weight: bold;
+}
+.help-tip-panel {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 27px;
+  z-index: 999;
+  width: min(310px, 70vw);
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 6px 24px #0003;
+  font:
+    14px/1.7 'Segoe UI',
+    sans-serif;
+  white-space: normal;
+  text-align: start;
+}
+.auto-plan progress {
+  display: block;
+  width: 100%;
+  height: 24px;
+  margin-block: 14px;
+  accent-color: var(--accent);
+}
+
+.sidebar-nav-item + .help-tip {
+  margin-inline-end: 8px;
+}
+.help-tip {
+  z-index: 5;
+}
+.help-tip-panel {
+  z-index: 1000;
+}
+
+/* Scan kind picker in the automatic plan: three cards, one selected. */
+.scan-kind {
+  border: 0;
+  padding: 0;
+  margin: 12px 0 18px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+.scan-kind legend {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.scan-kind label {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  cursor: pointer;
+}
+.scan-kind label.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.scan-kind input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.scan-kind label:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.scan-kind span {
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+/* "What the Hebrew version added" next to the credit. */
+.credit-improvements {
+  margin: 6px 0;
+}
+.credit-improvements summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+.credit-improvements ul {
+  margin: 6px 0;
+  padding-inline-start: 18px;
+}
+.sidebar-footer .credit-improvements ul {
+  font-size: 11.5px;
+  color: var(--text-2);
+}

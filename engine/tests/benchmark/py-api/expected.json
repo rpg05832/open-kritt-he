@@ -1,0 +1,48 @@
+{
+  "description": "Flask API: SQL injection, unsafe YAML and pickle, disabled TLS check, debug mode, committed GitHub token, privileged Kubernetes pod",
+  "clean": [
+    "clean_utils.py"
+  ],
+  "expected": [
+    {
+      "tool": "semgrep",
+      "rule": "python-sql-string-building",
+      "file": "app.py"
+    },
+    {
+      "tool": "semgrep",
+      "rule": "python-yaml-unsafe-load",
+      "file": "app.py"
+    },
+    {
+      "tool": "semgrep",
+      "rule": "python-unsafe-pickle",
+      "file": "app.py"
+    },
+    {
+      "tool": "semgrep",
+      "rule": "python-tls-verify-disabled",
+      "file": "app.py"
+    },
+    {
+      "tool": "semgrep",
+      "rule": "python-flask-debug",
+      "file": "app.py"
+    },
+    {
+      "tool": "secrets",
+      "rule": "github-pat",
+      "file": "settings.py"
+    },
+    {
+      "tool": "configuration",
+      "rule": "KSV-0017",
+      "file": "deploy/deployment.yaml"
+    },
+    {
+      "tool": "configuration",
+      "rule": "KSV-0009",
+      "file": "deploy/deployment.yaml"
+    }
+  ]
+}
