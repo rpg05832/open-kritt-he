@@ -1,6 +1,6 @@
 # Third-party notices / הודעות צד שלישי
 
-Generated: 2026-10-30T04:10:00.884Z
+Generated: 2026-10-30T08:30:04.189Z
 
 הגרסה העברית, התוספות והשיפורים בוצעו על ידי [@ארי ממתמחים טופ](https://mitmachim.top/user/%D7%90%D7%A8%D7%99). מייל: rpg05832@gmail.com.
 

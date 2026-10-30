@@ -1,3 +1,8 @@
 
 # Shell scripts run inside Linux containers.
 *.sh text eol=lf
+
+# Content-addressed legal notices: keep exact LF bytes on every platform so the
+# recorded SHA-256 matches (legalArtifacts.test.js reads the raw bytes).
+frontend/public/legal/texts/*.txt -text
+

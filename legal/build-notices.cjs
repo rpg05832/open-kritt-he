@@ -11,7 +11,9 @@ for(const block of apk.split(/\r?\n\r?\n/)){
  const p=Object.fromEntries(block.split(/\r?\n/).filter(l=>/^[PVLU]:/.test(l)).map(l=>[l[0],l.slice(2)]));
  if(p.P){const virtual=block.includes('T:virtual meta package')&&/^I:0$/m.test(block.replaceAll('\r',''))&&!/^R:/m.test(block);packages.push({component:'database-os',ecosystem:'Alpine',name:p.P,version:p.V,license:virtual?'NOT-APPLICABLE (empty virtual metapackage)':p.L||'UNKNOWN',virtualMeta:virtual,notices:[],homepage:p.U});}
 }
-function addText(name,text){const hash=crypto.createHash('sha256').update(text).digest('hex');texts[hash]=text;return {name,hash};}
+// Notice texts are content-addressed (texts/<sha256>.txt). Normalise to no-BOM,
+// LF so the hash is identical on Windows and Linux (see legalArtifacts.test.js).
+function addText(name,text){text=text.replace(/^﻿/,'').replace(/\r\n/g,'\n');const hash=crypto.createHash('sha256').update(text).digest('hex');texts[hash]=text;return {name,hash};}
 for(const component of ['frontend','backend']){
  const lock=read(path.join(root,component,'package-lock.json'));
  for(const [key,p] of Object.entries(lock.packages||{})){
