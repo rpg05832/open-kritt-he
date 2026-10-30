@@ -104,8 +104,13 @@ export function isModelProviderHarnessCompatible(modelProvider, harness) {
 }
 
 // A scan target / dependency is either a remote GitHub repo or a local repo folder.
-export const REPO_KINDS = ['remote', 'local'];
+export const REPO_KINDS = ['remote', 'local', 'url'];
 export const LOCAL_SNAPSHOT_REVISION = 'LOCAL_SNAPSHOT';
+// Website scans (repo kind "url") test a live site, so there is no commit.
+export const WEBSITE_REVISION = 'LIVE_SITE';
+// passive: crawl and read only. active: controlled attacks to prove a finding.
+// full: every check at maximum strength (authorized test environments only).
+export const WEBSITE_SCAN_MODES = ['passive', 'active', 'full'];
 
 // A GitHub repo id like org/repo, with an optional .git suffix on repo.
 const GITHUB_REPO_RE = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\.git)?$/;

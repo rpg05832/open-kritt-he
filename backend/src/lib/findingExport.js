@@ -200,6 +200,7 @@ function findingSeverity(vulnerability) {
 
 function shareSafeRepositoryDisplay(scan) {
   if (scan.repoKind === 'local') return 'Local repository';
+  if (scan.repoKind === 'url') return 'Website';
   const display = `${scan.repoDisplay || ''}`.trim();
   return /^[a-z0-9._-]+(?:\/[a-z0-9._-]+)+$/i.test(display) ? display : 'Remote repository';
 }

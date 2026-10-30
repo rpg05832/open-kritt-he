@@ -116,7 +116,7 @@ Results from earlier repeats:
 
 
 def scan_revision(scan: dict[str, Any]) -> str:
-    if (scan.get("repo_kind") or "remote") == "local":
+    if (scan.get("repo_kind") or "remote") in ("local", "url"):
         return LOCAL_SNAPSHOT_REVISION
     return scan.get("commit_sha") or "HEAD"
 
@@ -163,11 +163,11 @@ def patched_since_history_context(
     github_token: str | None = None,
 ) -> str:
     """Describe newer descendants while keeping network history shared per scan."""
-    if (scan.get("repo_kind") or "remote") == "local":
+    if (scan.get("repo_kind") or "remote") in ("local", "url"):
         return json.dumps(
             {
                 "status": "unavailable",
-                "reason": "Local scan snapshots do not contain Git history or remote refs; manual review is required.",
+                "reason": "Local scan snapshots and website scans do not contain Git history or remote refs; manual review is required.",
                 "target_revision": LOCAL_SNAPSHOT_REVISION,
                 "newer_descendants": [],
             },

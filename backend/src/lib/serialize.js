@@ -225,6 +225,14 @@ export function serializeSeverityRanker(r, { isDefault = false } = {}) {
 export function repoDisplayName(repoFull, repoKind) {
   if (!repoFull) return repoFull;
   if (repoKind === 'local') return repoFull;
+  if (repoKind === 'url') {
+    try {
+      const u = new URL(repoFull);
+      return (u.host + u.pathname).replace(/\/$/, '');
+    } catch {
+      return repoFull;
+    }
+  }
   try {
     const u = new URL(repoFull);
     const segs = u.pathname.split('/').filter(Boolean);

@@ -118,6 +118,21 @@ class _ProviderAccountHealth:
     observed_at: float | None
 
 
+
+# Snapshot-like targets: a local folder copy, or a website scan's work folder.
+# Neither has Git history, so both use LOCAL_SNAPSHOT_REVISION and per-scan caches.
+SNAPSHOT_KINDS = frozenset({"local", "url"})
+
+
+def snapshot_website_target(url: str, base_dir: str) -> tuple[str, str]:
+    """Create the work folder of a website scan: no code, only the target description."""
+    site_dir = Path(base_dir) / "site"
+    site_dir.mkdir(parents=True, exist_ok=True)
+    (site_dir / "WEBSITE_TARGET.json").write_text(
+        json.dumps({"url": url, "kind": "website"}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    return str(site_dir), LOCAL_SNAPSHOT_REVISION
+
 def image_workspace_enabled(*, data_dir: str | None = None) -> bool:
     mode = runtime_value(
         "ENGINE_POST_PROCESS_WORKSPACE_MODE",
@@ -574,7 +589,7 @@ def _prepare_dependency_workspace_tree(
     _add_timing(timings, "checkout_cache_ms", _elapsed_ms(cache_started))
 
     copy_started = time.perf_counter()
-    if primary_kind == "local":
+    if primary_kind in SNAPSHOT_KINDS:
         repo_dir, checked_out_commit = copy_local_snapshot(primary_cache_checkout, str(target_dir))
     else:
         repo_dir, checked_out_commit = copy_checkout(
@@ -607,7 +622,7 @@ def _prepare_dependency_workspace_tree(
         _add_timing(timings, "checkout_cache_ms", _elapsed_ms(cache_started))
         dep_path = Path(repo_dir) / alias
         copy_started = time.perf_counter()
-        if kind == "local":
+        if kind in SNAPSHOT_KINDS:
             _, dep_commit = copy_local_snapshot(dep_cache_checkout, str(dep_path))
         else:
             _, dep_commit = copy_checkout(
@@ -826,7 +841,7 @@ def scan_checkout_cache_key(scan: dict[str, Any]) -> str:
         "repo_kind": primary_kind,
         "repo_full": scan.get("repo_full"),
         "commit_sha": _requested_revision(primary_kind, scan.get("commit_sha")),
-        "scan_id": scan.get("id") if primary_kind == "local" else None,
+        "scan_id": scan.get("id") if primary_kind in SNAPSHOT_KINDS else None,
         "dependencies": _scan_dependencies(scan),
     }
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
@@ -855,7 +870,7 @@ def scan_checkout_cache_entry_prefixes(scan: dict[str, Any]) -> set[str]:
 
 def _has_remote_head(scan: dict[str, Any]) -> bool:
     primary_kind = scan.get("repo_kind") or "remote"
-    if primary_kind != "local" and _requested_revision(primary_kind, scan.get("commit_sha")).upper() == "HEAD":
+    if primary_kind not in SNAPSHOT_KINDS and _requested_revision(primary_kind, scan.get("commit_sha")).upper() == "HEAD":
         return True
     return any(
         (dep.get("kind") or "remote") != "local"
@@ -948,7 +963,7 @@ def resolve_scan_checkout_revisions(
 
             primary_kind = scan.get("repo_kind") or "remote"
             primary_commit = scan.get("commit_sha")
-            if primary_kind != "local" and _requested_revision(primary_kind, primary_commit).upper() == "HEAD":
+            if primary_kind not in SNAPSHOT_KINDS and _requested_revision(primary_kind, primary_commit).upper() == "HEAD":
                 primary_commit = resolve_remote_head(scan["repo_full"], github_token)
 
             dependency_commits = []
@@ -1200,7 +1215,9 @@ def _checkout_scan_repo_to_cache(
         if cache_base.exists():
             shutil.rmtree(cache_base)
 
-        if kind == "local":
+        if kind == "url":
+            repo_dir, checked_out = snapshot_website_target(repo_full, str(cache_base))
+        elif kind == "local":
             repo_dir, checked_out = snapshot_local_repo(repo_full, str(cache_base), os.getenv("LOCAL_REPOS_PATH"))
         else:
             repo_dir, checked_out = checkout_repo(repo_full, commit_sha, str(cache_base), github_token)
@@ -1263,7 +1280,7 @@ def _read_ready_cache_checkout(cache_base: Path) -> tuple[str, str] | None:
         else:
             repo_path = Path(repo_dir) if isinstance(repo_dir, str) else None
         if repo_path is not None and isinstance(commit, str) and commit and _path_is_inside(repo_path, cache_base):
-            if kind == "local":
+            if kind in SNAPSHOT_KINDS:
                 if commit == LOCAL_SNAPSHOT_REVISION and repo_path.is_dir() and not repo_path.is_symlink():
                     return str(repo_path), commit
             elif _git_head_commit(repo_path) == commit:
@@ -1358,11 +1375,12 @@ def _checkout_cache_base(
     kind: str = "remote",
     scan_id: Any | None = None,
 ) -> Path:
-    if kind == "local":
-        repo_part = _safe_alias(str(repo_full or "local"))[:80]
+    if kind in SNAPSHOT_KINDS:
+        repo_part = _safe_alias(str(repo_full or kind))[:80]
         repo_digest = hashlib.sha256(str(repo_full or "").encode("utf-8")).hexdigest()[:10]
         scan_part = _safe_alias(str(scan_id)) if scan_id is not None else "unscoped"
-        return cache_dir / f"local__scan-{scan_part}__{repo_part}-{repo_digest}@{LOCAL_SNAPSHOT_REVISION}"
+        prefix = "site" if kind == "url" else "local"
+        return cache_dir / f"{prefix}__scan-{scan_part}__{repo_part}-{repo_digest}@{LOCAL_SNAPSHOT_REVISION}"
     normalized = normalize_repo_full(repo_full).rstrip("/").removesuffix(".git")
     repo_part = _safe_alias(normalized.replace("/", "__"))
     commit_part = _safe_alias(commit_sha or "HEAD")
@@ -1370,7 +1388,7 @@ def _checkout_cache_base(
 
 
 def _requested_revision(kind: str, commit_sha: Any | None) -> str:
-    if kind == "local":
+    if kind in SNAPSHOT_KINDS:
         return LOCAL_SNAPSHOT_REVISION
     return str(commit_sha or "HEAD")
 

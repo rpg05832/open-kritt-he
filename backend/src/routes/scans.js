@@ -11,8 +11,10 @@ import {
   validateModelSelection,
   validateModelOverrides,
   validateProspectiveScanRuntimeSettings,
+  websiteHostClass,
   ValidationError,
 } from '../lib/validation.js';
+import { lookup as dnsLookup } from 'node:dns/promises';
 import { assembleScans, assembleScan } from '../lib/repo.js';
 import { repoDisplayName, serializeSupplementalPostScriptRun, serializeVulnerability } from '../lib/serialize.js';
 import { SCAN_STATUSES, extractExtraKeys } from '../lib/constants.js';
@@ -974,6 +976,30 @@ router.get('/:id/export', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
   try {
     const valid = validateScan(req.body, { localNames: localRepoNames() });
+    // Website target: resolve the name and reject if it points anywhere internal,
+    // unless local-site scanning was turned on. The engine checks again per request.
+    if (valid.repoKind === 'url' && valid.configuration?.website?.allow_local !== true) {
+      let addresses = [];
+      try {
+        addresses = await dnsLookup(new URL(valid.repoFull).hostname, { all: true });
+      } catch {
+        return res.status(400).json({
+          error: 'The website address could not be resolved.',
+          errors: [{ field: 'repo_full', message: 'The website address could not be resolved.' }],
+        });
+      }
+      if (addresses.some((a) => websiteHostClass(a.address) === 'internal')) {
+        return res.status(400).json({
+          error: 'This address resolves to your computer or local network.',
+          errors: [
+            {
+              field: 'configuration.website.allow_local',
+              message: 'This address resolves to your computer or local network. Turn on local-site scanning to allow it.',
+            },
+          ],
+        });
+      }
+    }
     await assertModelSelectionAvailable(valid);
     await assertSelectionAvailable(assertModelSelectionAvailable, valid.postProcessingSelection, 'post_processing');
     const activeScanCount = await prisma.scan.count({ where: { status: { in: ACTIVE_SCAN_STATUSES } } });

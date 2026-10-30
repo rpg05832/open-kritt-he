@@ -192,6 +192,40 @@ def _record(report, result, label):
         report["limitations"].append(label + ": " + result.get("reason", "לא הושלם"))
 
 
+def write_website_preflight(root, scan_id, *, url, mode="passive", allow_local=False, output_root=None):
+    """Run the ZAP dynamic scan for a website target and write it in the preflight format."""
+    from .website_scan import run_website_scan
+
+    started = time.monotonic()
+    report = {
+        "version": 1,
+        "scan_id": str(scan_id),
+        "scan_kind": "website",
+        "target_url": url,
+        "website_mode": mode,
+        "files_seen": 0,
+        "files_checked": 0,
+        "languages": {},
+        "manifests": [],
+        "candidates": [],
+        "checks": [],
+        "not_run": ["בדיקת קוד מקור", "בדיקת ספריות תלות", "בדיקת תקינות קוד"],
+        "limitations": [],
+        "inventory_complete": True,
+    }
+    result = run_website_scan(url, mode=mode, scan_id=scan_id, allow_local=allow_local)
+    report["website"] = {k: v for k, v in result.items() if k != "candidates"}
+    report["candidates"] = result.get("candidates", [])
+    _record(report, result, f"סריקת אתר דינמית עם ZAP (מצב {mode})")
+    report["duration_seconds"] = round(time.monotonic() - started, 2)
+    report["generated_at"] = time.time()
+    directory = Path(os.getenv("ENGINE_DATA_DIR", "/data")) / "security-reports"
+    directory.mkdir(parents=True, exist_ok=True)
+    atomic_json(Path(output_root or root) / ".open-kritt-security-checks.json", report)
+    atomic_json(directory / ("scan-" + str(int(scan_id)) + ".json"), report)
+    return report
+
+
 def write_preflight(root, scan_id, *, dependency_audit=False, output_root=None, incremental=None, scan_kind="security"):
     """scan_kind: "security" (default), "quality" (code quality only) or "both"."""
     started = time.monotonic()

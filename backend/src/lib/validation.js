@@ -25,6 +25,8 @@ import {
   MODEL_ID_MAX_LENGTH,
   REPO_KINDS,
   LOCAL_SNAPSHOT_REVISION,
+  WEBSITE_REVISION,
+  WEBSITE_SCAN_MODES,
   isValidGithubRepoInput,
   normalizeGithubRepo,
   isValidKey,
@@ -871,14 +873,72 @@ function validateDatabaseId(value, field, label, push) {
 // Normalize + validate a single repo reference (the scan target or a dependency).
 // `localNames` is a Set of available local repo folder names (or null to skip the
 // existence check). Pushes precise field errors under `prefix`.
-function normalizeRepoRef(raw, localNames, push, prefix) {
+// A website target: an http(s) address without embedded credentials.
+export function normalizeWebsiteUrl(raw) {
+  let url;
+  try {
+    url = new URL(String(raw || '').trim());
+  } catch {
+    return null;
+  }
+  if (!['http:', 'https:'].includes(url.protocol) || !url.hostname) return null;
+  if (url.username || url.password) return null;
+  url.hash = '';
+  const href = url.href;
+  return href.length <= 2048 ? href : null;
+}
+
+// Classify a host as "internal" (the scanner's own machine, the program's own
+// services, or a private/LAN address) or "public". Literal-IP and name based;
+// the route and engine additionally resolve the name and re-check (DNS rebinding).
+// An IPv4 address (dotted quad or a ::ffff: mapped form) is "internal" when private.
+export function websiteHostClass(hostname) {
+  const host = String(hostname || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\.$/, '')
+    .replace(/^\[|\]$/g, '');
+  if (!host) return 'internal';
+  // Bare single-label names (localhost, db, backend, open-kritt-*) are internal.
+  if (!host.includes('.') && !host.includes(':')) return 'internal';
+  if (host === 'localhost' || host.endsWith('.localhost')) return 'internal';
+  if (host.endsWith('.local') || host.endsWith('.internal') || host === 'host.docker.internal') return 'internal';
+
+  const mapped = host.match(/^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/);
+  const v4 = (mapped ? mapped[1] : host).match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (v4) {
+    const [a, b] = v4.slice(1).map(Number);
+    if (v4.slice(1).map(Number).some((n) => n > 255)) return 'internal';
+    if (a === 10 || a === 127 || a === 0) return 'internal';
+    if (a === 172 && b >= 16 && b <= 31) return 'internal';
+    if (a === 192 && b === 168) return 'internal';
+    if (a === 169 && b === 254) return 'internal';
+    if (a === 100 && b >= 64 && b <= 127) return 'internal';
+    return 'public';
+  }
+  if (host.includes(':')) {
+    // IPv6 literal: loopback, unspecified, link-local (fe80::/10), ULA (fc00::/7).
+    if (host === '::1' || host === '::') return 'internal';
+    if (/^fe[89ab]/.test(host)) return 'internal';
+    if (/^f[cd]/.test(host)) return 'internal';
+    return 'public';
+  }
+  return 'public';
+}
+
+function normalizeRepoRef(raw, localNames, push, prefix, { allowUrl = false } = {}) {
   const kind = (raw?.kind ?? raw?.repo_kind ?? raw?.repoKind ?? 'remote').toString().trim();
   const rawRepoFull = (raw?.repo_full ?? raw?.repoFull ?? '').toString().trim();
   const commitSha = (raw?.commit_sha ?? raw?.commitSha ?? '').toString().trim();
 
-  if (!REPO_KINDS.includes(kind)) {
-    push(`${prefix}.kind`, `Repo kind must be one of: ${REPO_KINDS.join(', ')}.`);
+  if (!REPO_KINDS.includes(kind) || (kind === 'url' && !allowUrl)) {
+    push(`${prefix}.kind`, `Repo kind must be one of: ${REPO_KINDS.filter((k) => allowUrl || k !== 'url').join(', ')}.`);
     return { kind, repoFull: rawRepoFull, commitSha: commitSha || 'HEAD' };
+  }
+  if (kind === 'url') {
+    const repoFull = normalizeWebsiteUrl(rawRepoFull);
+    if (!repoFull) push(`${prefix}.repo_full`, 'Enter a full website address, e.g. https://example.com.');
+    return { kind, repoFull: repoFull || rawRepoFull, commitSha: WEBSITE_REVISION };
   }
   if (kind === 'remote') {
     const repoFull = normalizeGithubRepo(rawRepoFull);
@@ -919,7 +979,8 @@ export function validateScan(body, { localNames = null } = {}) {
     { kind: body?.repo_kind ?? body?.repoKind, repo_full: body?.repo_full, commit_sha: body?.commit_sha },
     localNames,
     push,
-    'target'
+    'target',
+    { allowUrl: true }
   );
 
   const selection = modelSelectionValidation(body);
@@ -960,6 +1021,32 @@ export function validateScan(body, { localNames = null } = {}) {
       configuration = JSON.parse(body.configuration);
     } catch {
       push('configuration', 'Configuration is not valid JSON.');
+    }
+  }
+  // Website scans attack a live site: the requester must confirm ownership or
+  // written permission, and choose passive (no attack traffic) or active testing.
+  if (target.kind === 'url') {
+    const website = configuration?.website;
+    if (website?.authorized !== true)
+      push('configuration.website.authorized', 'Confirm that you own the site or have written permission to test it.');
+    if (!WEBSITE_SCAN_MODES.includes(website?.mode))
+      push('configuration.website.mode', `Website scan mode must be one of: ${WEBSITE_SCAN_MODES.join(', ')}.`);
+    if (dependencies.length) push('dependencies', 'Website scans do not take dependency repositories.');
+    if (configuration?.scan_mode === 'changes') push('configuration.scan_mode', 'Website scans always test the whole site.');
+    // Internal / private addresses need the explicit local-site opt-in; the
+    // program's own services stay blocked even then (enforced in the engine).
+    if (target.repoFull && target.commitSha === WEBSITE_REVISION) {
+      let hostClass = 'internal';
+      try {
+        hostClass = websiteHostClass(new URL(target.repoFull).hostname);
+      } catch {
+        /* normalizeWebsiteUrl already reported the malformed address */
+      }
+      if (hostClass === 'internal' && website?.allow_local !== true)
+        push(
+          'configuration.website.allow_local',
+          'This address is on your computer or local network. Turn on local-site scanning to allow it.'
+        );
     }
   }
   const postProcessingInput = postProcessingRuntimeInput(body, configuration);
