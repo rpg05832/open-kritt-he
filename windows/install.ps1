@@ -1,8 +1,9 @@
 ﻿[CmdletBinding()]
-param([switch]$PrepareOnly,[switch]$AcceptLicense,[switch]$IncludeCursor,[switch]$IncludeGrok,[switch]$NoStart,[switch]$BuildLocally,[string]$TargetRoot='')
+param([switch]$PrepareOnly,[switch]$AcceptLicense,[switch]$IncludeCursor,[switch]$IncludeGrok,[switch]$NoStart,[switch]$BuildLocally,[string]$TargetRoot='',[ValidateSet('','desktop','wsl')][string]$DockerEngine='')
 $ErrorActionPreference='Stop'
 # $PSScriptRoot is empty inside param() defaults in Windows PowerShell 5.1.
 if(-not $TargetRoot){$TargetRoot=$PSScriptRoot}
+. (Join-Path $PSScriptRoot 'docker-host.ps1')
 $installationRoot=[IO.Path]::GetFullPath($TargetRoot)
 if($installationRoot -notmatch '^[A-Za-z]:\\'){throw 'יש לחלץ את החבילה לתיקייה בכונן מקומי, ולא לשיתוף רשת.'}
 $applicationRoot=Join-Path $installationRoot 'app'
@@ -32,6 +33,14 @@ foreach($choice in @(@('IncludeCursor','INSTALL_CURSOR'),@('IncludeGrok','INSTAL
   [IO.File]::WriteAllText($environmentFile,$text,(New-Object Text.UTF8Encoding($false)))
  }
 }
+# Docker engine: Docker Desktop, or the built-in WSL engine (no Docker Desktop needed).
+if($DockerEngine){
+ $text=[IO.File]::ReadAllText($environmentFile)
+ $text=[regex]::Replace($text,'(?m)^OPEN_KRITT_DOCKER_ENGINE=.*\r?\n?','')
+ [IO.File]::WriteAllText($environmentFile,$text.TrimEnd()+[Environment]::NewLine+'OPEN_KRITT_DOCKER_ENGINE='+$DockerEngine+[Environment]::NewLine,(New-Object Text.UTF8Encoding($false)))
+}
+$EngineMode=Get-DockerEngineMode $environmentFile
+function Invoke-DockerCli { $call=Get-DockerCall $EngineMode @($args|ForEach-Object{[string]$_}); & $call.File @($call.List) }
 foreach($relative in @('local_repos','.data/engine/credentials','.data/codex','.data/codex-accounts','.data/codex-home-source','.data/claude','.data/claude-accounts','.data/grok','.data/grok-accounts','.data/engine/executor-auth')){[void][IO.Directory]::CreateDirectory((Join-Path $applicationRoot $relative))}
 # Approved public CA certificates (see prepare.ps1) are mirrored into every
 # build context. Only thumbprint-named files are managed, so a certificate the
@@ -45,21 +54,22 @@ foreach($service in @('frontend','backend','engine','database','executor-view'))
  foreach($old in Get-ChildItem -LiteralPath $destination -Filter '*.crt'){if($old.Name -match '^[A-Fa-f0-9]{40}\.crt$' -and -not ($approved|Where-Object {$_.Name -ieq $old.Name})){Remove-Item -LiteralPath $old.FullName -Force}}
  foreach($certificate in $approved){Copy-Item -LiteralPath $certificate.FullName -Destination $destination -Force}
 }
-$drive=$applicationRoot.Substring(0,1).ToLowerInvariant()
-$mountPath='/run/desktop/mnt/host/'+$drive+'/'+$applicationRoot.Substring(3).Replace('\','/')+'/.data/engine'
+$mountPath=Get-DockerDataMountPath $EngineMode $applicationRoot
 $text=[IO.File]::ReadAllText($environmentFile)
 $text=[regex]::Replace($text,'(?m)^ENGINE_DOCKER_DATA_DIR_HOST=.*\r?\n?','')
 $text+=[Environment]::NewLine+'ENGINE_DOCKER_DATA_DIR_HOST="'+$mountPath+'"'+[Environment]::NewLine
 [IO.File]::WriteAllText($environmentFile,$text,(New-Object Text.UTF8Encoding($false)))
 if($PrepareOnly){Write-Output 'Preparation verified; no containers started and no software downloaded.';exit 0}
-$dockerPath=(Get-Command docker.exe -ErrorAction SilentlyContinue).Source
-if(-not $dockerPath){$dockerPath=Join-Path $env:ProgramFiles 'Docker\Docker\resources\bin\docker.exe'}
-if(-not (Test-Path -LiteralPath $dockerPath)){throw 'Docker Desktop אינו מותקן. פתחו את Install.cmd: האשף יוריד את המתקין הרשמי ויסביר מה לעשות.'}
-$dockerCommand=[pscustomobject]@{Source=$dockerPath}
-$osType=$null; try{$osType=& $dockerPath info --format '{{.OSType}}' 2>$null}catch{}
-if($osType -ne 'linux'){throw 'Docker Desktop כבוי או לא מוכן. פתחו אותו, המתינו עד שכתוב Engine running, ונסו שוב.'}
-$existing=& $dockerCommand.Source ps -aq --filter label=com.docker.compose.project=openkritt-he
-$existingVolumes=& $dockerCommand.Source volume ls -q --filter label=com.docker.compose.project=openkritt-he
+if($EngineMode -eq 'wsl'){
+ if(-not (Test-WslEngineInstalled)){Write-Output 'Installing the built-in Docker engine...'; [void](Install-WslEngine $installationRoot)}
+ if(-not (Start-WslEngine $installationRoot)){throw 'מנוע Docker המובנה לא עלה. פתחו את "בדיקה ותיקון"; פרטים ב-/var/log/dockerd.log בתוך סביבת OpenKritt.'}
+}else{
+ if(-not (Test-Path -LiteralPath (Get-DesktopDockerPath))){throw 'Docker Desktop אינו מותקן. פתחו את Install.cmd: האשף יוריד את המתקין הרשמי ויסביר מה לעשות.'}
+ $osType=$null; try{$osType=Invoke-DockerCli info --format '{{.OSType}}' 2>$null}catch{}
+ if($osType -ne 'linux'){throw 'Docker Desktop כבוי או לא מוכן. פתחו אותו, המתינו עד שכתוב Engine running, ונסו שוב.'}
+}
+$existing=Invoke-DockerCli ps -aq --filter label=com.docker.compose.project=openkritt-he
+$existingVolumes=Invoke-DockerCli volume ls -q --filter label=com.docker.compose.project=openkritt-he
 if(($existing -or $existingVolumes) -and -not (Test-Path -LiteralPath (Join-Path $installationRoot '.maintenance/installed-here'))){throw 'כבר קיימת במחשב התקנה או נתונים של התוכנה. השתמשו בתיקיית ההתקנה הקיימת או במסך העדכונים שלה; לא בוצע שינוי בשירותים.'}
 Push-Location -LiteralPath $applicationRoot
 try{
@@ -80,6 +90,7 @@ try{
   }
   $values['ENGINE_SCAN_RUNNER_IMAGE']=$values['ENGINE_IMAGE']
   $values['COMPOSE_FILE']='docker-compose.yml;docker-compose.override.yml;docker-compose.images.yml'
+  $values['COMPOSE_PATH_SEPARATOR']=';' # the built-in engine runs compose on Linux, where the default is ':'
   $text=[IO.File]::ReadAllText($environmentFile)
   foreach($key in $values.Keys){$text=[regex]::Replace($text,('(?m)^'+$key+'=.*\r?\n?'),''); $text=$text.TrimEnd()+[Environment]::NewLine+$key+'='+$values[$key]}
   [IO.File]::WriteAllText($environmentFile,$text+[Environment]::NewLine,(New-Object Text.UTF8Encoding($false)))
@@ -89,7 +100,7 @@ try{
    $previousPreference=$ErrorActionPreference
    try{
     $ErrorActionPreference='Continue'
-    & $dockerCommand.Source compose -p openkritt-he pull $service 2>&1 | ForEach-Object { $line=$_.ToString(); Add-Content -LiteralPath $installLog -Value $line -Encoding UTF8; Write-Host $line }
+    Invoke-DockerCli compose --project-directory $applicationRoot -p openkritt-he pull $service 2>&1 | ForEach-Object { $line=$_.ToString(); Add-Content -LiteralPath $installLog -Value $line -Encoding UTF8; Write-Host $line }
     $pullExit=$LASTEXITCODE
    }finally{$ErrorActionPreference=$previousPreference}
    if($pullExit -ne 0){$usedImages=$false; break}
@@ -108,7 +119,7 @@ try{
   $previousPreference=$ErrorActionPreference
   try{
    $ErrorActionPreference='Continue'
-   & $dockerCommand.Source compose -p openkritt-he build $service 2>&1 | ForEach-Object {
+   Invoke-DockerCli compose --project-directory $applicationRoot -p openkritt-he build $service 2>&1 | ForEach-Object {
     $line=$_.ToString() -replace '(https?://)[^/\s]+@','$1[redacted]@'
     Add-Content -LiteralPath $installLog -Value $line -Encoding UTF8
     Write-Host $line

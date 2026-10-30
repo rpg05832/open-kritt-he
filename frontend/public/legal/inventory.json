@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-10-30T02:44:42.730Z",
+  "generatedAt": "2026-10-30T04:10:00.884Z",
   "auditStatus": "REVIEW_REQUIRED_NOT_LEGAL_CLEARANCE",
   "inputHashes": {
     "LICENSE": "d8a6cc31abc16b6748c7a21f21611f5a1ec33f67d22ca23d7da1c19b95496bee",
     "frontend/package-lock.json": "0eec34d7e1354c26f16877dc64ec7d1ab41e7f116294d704f83d5601ff7a6829",
     "backend/package-lock.json": "6eddd34681e0519075eb55c3ccb2090e3833c7656aba74f1d1d791e728dbcc35",
     "engine/requirements.txt": "47ae79173a2f5b0be65dab8fba54d74990007439026d8735f40c5c2b63211b6d",
-    "engine/Dockerfile": "629701431a1808c3d3204512f97295d788ad341f67fd67febb5ab65bbd5cf36c",
+    "engine/Dockerfile": "a6ee7f2fbbe2297e986db194b4fe3e99eb22db97068dfa848ee06f549140439f",
     "frontend/Dockerfile": "271c5373af8495bc4c46082679efdb4353e9c65e01459056f9cb5b3fe6395ff5",
-    "backend/Dockerfile": "21782770393d7fb4de2adba39b88ad3f1fa0d0f30960d7f24e63687a7360ad01",
+    "backend/Dockerfile": "8855c640e4403f7af6e1fe167a096c84bc60e767a84b9f9b32c285ff542c2426",
     "database/Dockerfile": "5258419669e39bda4a717acb065be88e1e47e4c6d32a169adbebea33fffa9461",
-    "executor-view/Dockerfile": "cd2c05b76e00cc19b09513bc5a97b582bd65c27de777a966d4b0952b22abe1af"
+    "executor-view/Dockerfile": "3991928f2861749b79e1ebb9ae017b833e42940d89d17a579d048ef8f0855261"
   },
   "credit": {
     "name": "@ארי",
@@ -28,8 +28,8 @@
     "license": "AGPL-3.0-only"
   },
   "summary": {
-    "packageRecords": 1351,
-    "uniquePackages": 866,
+    "packageRecords": 1352,
+    "uniquePackages": 867,
     "noticeTexts": 471,
     "unresolved": 0
   },
@@ -23445,6 +23445,16 @@
       "license": "Apache-2.0 source; binary under x.ai terms",
       "homepage": "https://github.com/xai-org/grok-build",
       "review": "vendor-terms",
+      "notices": []
+    },
+    {
+      "component": "external-tools-and-assets",
+      "ecosystem": "external",
+      "name": "Built-in Docker engine (optional, not bundled): Docker Engine and Docker Compose from the signed Alpine Linux repository, in an Alpine minirootfs verified by SHA-256, downloaded on the user's computer",
+      "version": "see installed image inventory",
+      "license": "Apache-2.0 (Docker Engine, Compose); Alpine packages under their own licenses",
+      "homepage": "https://pkgs.alpinelinux.org/package/v3.24/community/x86_64/docker",
+      "review": "conditions-required",
       "notices": []
     },
     {

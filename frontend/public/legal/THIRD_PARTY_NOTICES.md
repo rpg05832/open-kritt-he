@@ -1,6 +1,6 @@
 # Third-party notices / הודעות צד שלישי
 
-Generated: 2026-10-30T02:44:42.730Z
+Generated: 2026-10-30T04:10:00.884Z
 
 הגרסה העברית, התוספות והשיפורים בוצעו על ידי [@ארי ממתמחים טופ](https://mitmachim.top/user/%D7%90%D7%A8%D7%99). מייל: rpg05832@gmail.com.
 
@@ -1345,6 +1345,7 @@ License texts are retained under frontend/public/legal/texts/<SHA256>.txt. Hashe
 |external-tools-and-assets|Cursor Agent|see installed image inventory|Proprietary vendor terms||
 |external-tools-and-assets|Claude Code CLI (installed from npm at build time, not bundled)|see installed image inventory|Proprietary - Anthropic terms||
 |external-tools-and-assets|Grok Build CLI (optional, off by default, downloaded at build time; source code Apache-2.0 at github.com/xai-org/grok-build, official binary also subject to x.ai terms)|see installed image inventory|Apache-2.0 source; binary under x.ai terms||
+|external-tools-and-assets|Built-in Docker engine (optional, not bundled): Docker Engine and Docker Compose from the signed Alpine Linux repository, in an Alpine minirootfs verified by SHA-256, downloaded on the user's computer|see installed image inventory|Apache-2.0 (Docker Engine, Compose); Alpine packages under their own licenses||
 |external-tools-and-assets|Docker Desktop (host prerequisite, not bundled)|see installed image inventory|Separate subscription / vendor terms||
 |external-tools-and-assets|Codex CLI|see installed image inventory|Apache-2.0|d17f227e4df5da1600391338865ce0f3055211760a36688f816941d58232d8dc|
 |external-tools-and-assets|Gitleaks (secret scanner, downloaded at build time, version in engine/security-tools.json)|see installed image inventory|MIT|e3884b252b3bfc045e55be43a34d1e80da070bc6f804ac95bf4660e97d62ebc6|

@@ -4,23 +4,24 @@ $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 $Root=$PSScriptRoot; $App=Join-Path $Root 'app'; $Log=Join-Path $Root 'manager.log'
-$Docker=Join-Path $env:ProgramFiles 'Docker\Docker\resources\bin\docker.exe'
-if(Get-Command docker.exe -ErrorAction SilentlyContinue){$Docker=(Get-Command docker.exe).Source}
+. (Join-Path $PSScriptRoot 'docker-host.ps1')
+$EngineMode=Get-DockerEngineMode (Join-Path $App '.env')
 $script:Busy=$false
 function Note([string]$s) { $script:LastMessage=$s; Add-Content -LiteralPath $Log -Value "$(Get-Date -Format s) $s" -Encoding UTF8; if($script:StatusLabel){$script:StatusLabel.Text=$s}; [Windows.Forms.Application]::DoEvents() }
 function Run-Docker([string[]]$Arguments,[int]$Timeout=45,[switch]$AllowFailure) {
- $p=New-Object Diagnostics.Process; $p.StartInfo.FileName=$Docker
- $p.StartInfo.Arguments=($Arguments | ForEach-Object { '"'+($_ -replace '"','\"')+'"' }) -join ' '
+ $call=Get-DockerCall $EngineMode $Arguments
+ $p=New-Object Diagnostics.Process; $p.StartInfo.FileName=$call.File; $p.StartInfo.Arguments=$call.CommandLine
  $p.StartInfo.UseShellExecute=$false; $p.StartInfo.CreateNoWindow=$true
  $p.StartInfo.RedirectStandardOutput=$true; $p.StartInfo.RedirectStandardError=$true
- $p.StartInfo.WorkingDirectory=$Root
+ # Compose resolves COMPOSE_FILE (prebuilt-image mode) relative to the working folder.
+ $p.StartInfo.WorkingDirectory=$(if(Test-Path -LiteralPath $App){$App}else{$Root})
  [void]$p.Start(); $o=$p.StandardOutput.ReadToEndAsync(); $e=$p.StandardError.ReadToEndAsync(); $timer=[Diagnostics.Stopwatch]::StartNew()
  while(-not $p.HasExited){ [Windows.Forms.Application]::DoEvents(); Start-Sleep -Milliseconds 100; if($timer.Elapsed.TotalSeconds -gt $Timeout){$p.Kill(); throw 'הפעולה חרגה מזמן ההמתנה. ניתן לבדוק מצב ולנסות שוב.'} }
  $p.WaitForExit(); $result=[pscustomobject]@{Code=$p.ExitCode; Out=$o.Result; Err=$e.Result}; $p.Dispose()
- if($result.Code -ne 0 -and -not $AllowFailure){ throw 'פקודת Docker נכשלה. פרטים נוספים זמינים ב-Docker Desktop; לא נשמרו סודות ביומן.' }; return $result
+ if($result.Code -ne 0 -and -not $AllowFailure){ throw ('פקודת Docker נכשלה. פרטים נוספים זמינים ב-'+(Get-DockerEngineName $EngineMode)+'; לא נשמרו סודות ביומן.') }; return $result
 }
 function Compose([string[]]$Arguments,[int]$Timeout=180){Run-Docker (@('compose','--project-directory',$App,'-p','openkritt-he')+$Arguments) $Timeout}
-function Engine-Ready { if(-not (Test-Path -LiteralPath $Docker)){return $false}; try{return (Run-Docker @('info','--format','{{.ServerVersion}}') 8 -AllowFailure).Code -eq 0}catch{return $false} }
+function Engine-Ready { if(-not (Test-DockerEngineInstalled $EngineMode)){return $false}; try{return (Run-Docker @('info','--format','{{.ServerVersion}}') 8 -AllowFailure).Code -eq 0}catch{return $false} }
 function Pause-Pump([int]$Seconds){$until=(Get-Date).AddSeconds($Seconds); while((Get-Date) -lt $until){[Windows.Forms.Application]::DoEvents(); Start-Sleep -Milliseconds 100}}
 function Wait-Engine { $until=(Get-Date).AddSeconds(90); do {if(Engine-Ready){return $true}; Pause-Pump 2}while((Get-Date) -lt $until); return $false }
 function Repair-StaleRuntime {
@@ -45,6 +46,12 @@ function Repair-StaleRuntime {
 $DockerDesktop=Join-Path $env:ProgramFiles 'Docker\Docker\Docker Desktop.exe'
 function Ensure-Engine {
  if(Engine-Ready){return}
+ if($EngineMode -eq 'wsl'){
+  if(-not (Test-WslEngineInstalled)){throw 'מנוע Docker המובנה אינו מותקן. פתחו את "בדיקה ותיקון" כדי להתקין אותו מחדש.'}
+  Note 'מפעיל את מנוע Docker המובנה וממתין עד דקה...'
+  if(Start-WslEngine $Root){return}
+  throw 'מנוע Docker המובנה לא עלה. פתחו את "בדיקה ותיקון"; פרטים ב-/var/log/dockerd.log בתוך סביבת OpenKritt.'
+ }
  if(-not (Test-Path -LiteralPath $DockerDesktop)){throw 'Docker Desktop אינו מותקן במחשב. פתחו את "בדיקה ותיקון" (Prepare.cmd): האשף יוריד את המתקין הרשמי ויסביר מה לעשות.'}
  Note 'מפעיל את Docker Desktop וממתין עד 90 שניות...'
  Start-Process -FilePath $DockerDesktop -WindowStyle Hidden
@@ -58,7 +65,7 @@ function Owned-Runners {
   $mounts=(Run-Docker @('inspect','--format','{{json .Mounts}}',$id)).Out | ConvertFrom-Json
   $owned=$false
   $driveLetter=$App.Substring(0,1).ToLowerInvariant(); $appRelative=$App.Substring(3).Replace('\','/').ToLowerInvariant()
-  $prefixes=@($App.Replace('\','/').ToLowerInvariant()+'/.data/','/run/desktop/mnt/host/'+$driveLetter+'/'+$appRelative+'/.data/','/host_mnt/'+$driveLetter+'/'+$appRelative+'/.data/')
+  $prefixes=@($App.Replace('\','/').ToLowerInvariant()+'/.data/',(ConvertTo-WslPath $App).ToLowerInvariant()+'/.data/','/run/desktop/mnt/host/'+$driveLetter+'/'+$appRelative+'/.data/','/host_mnt/'+$driveLetter+'/'+$appRelative+'/.data/')
   foreach($m in $mounts){$source=($m.Source -replace '\\','/').ToLowerInvariant(); foreach($prefix in $prefixes){if($source.StartsWith($prefix)){$owned=$true}}}
   if($owned){$id}
  }
@@ -99,6 +106,8 @@ function Stop-App {
  [void](Compose @('stop','engine'))
  foreach($id in @(Owned-Runners)){[void](Run-Docker @('stop','--time','20',$id) 40)}
  [void](Compose @('stop'))
+ # The built-in engine serves only this program, so stopping it frees its memory too.
+ if($EngineMode -eq 'wsl'){Stop-WslEngine; Note 'Open-Kritt ומנוע Docker המובנה נעצרו. הנתונים נשמרו.'; return}
  Note 'Open-Kritt נעצר. הנתונים נשמרו ושאר שירותי Docker ממשיכים לפעול.'
 }
 
@@ -155,6 +164,8 @@ function Uninstall-App {
  foreach($id in $ids){$mounts=(Run-Docker @('inspect','--format','{{json .Mounts}}',$id)).Out | ConvertFrom-Json; foreach($m in $mounts){if($m.Type -eq 'volume' -and $m.Name -match '^[a-f0-9]{64}$'){$anonymous+=$m.Name}}}
  if($delete){[void](Compose @('down','--volumes'))}else{[void](Compose @('down'))}
  foreach($v in $anonymous | Select-Object -Unique){[void](Run-Docker @('volume','rm',$v) 30 -AllowFailure)}
+ # Full deletion also removes the built-in engine (it holds only this program's images and data).
+ if($delete -and $EngineMode -eq 'wsl'){Remove-WslEngine; $engineFolder=Join-Path $Root 'wsl-engine'; if(Test-Path -LiteralPath $engineFolder){Remove-Item -LiteralPath $engineFolder -Recurse -Force}}
  Assert-AppTree
  if($delete){Remove-Item -LiteralPath $App -Recurse -Force; Note 'היישום ונתוניו הוסרו. תמונות Docker משותפות לא נמחקו.'}else{$backup='app.backup-'+(Get-Date -Format 'yyyyMMdd-HHmmss'); Rename-Item -LiteralPath $App -NewName $backup; Note "היישום הוסר. הנתונים ופרטי ההתחברות נשמרו ב-$Root\$backup. יש לשמור על הגיבוי באופן פרטי."}
  $shortcutDir=Join-Path ([Environment]::GetFolderPath('Desktop')) 'Open-Kritt'

@@ -61,7 +61,7 @@ put('app/vendor-cache/.gitkeep', Buffer.alloc(0));
 put('app/vendor-cache/README.txt', fs.readFileSync(path.join(root, 'vendor-cache', 'README.txt')));
 put('certificates/README.txt', Buffer.from('﻿תיקייה זו מיועדת לתעודות רשות (CA) של הרשת שלכם בלבד, שאישרתם באשף ההתקנה.\r\nהאשף מציג את פרטי התעודה ומבקש אישור לפני שמירה. אין להוסיף קובץ עם מפתח פרטי.\r\nכדי לבטל אישור: מחקו את הקובץ ובנו מחדש את רכיבי התוכנה מהאשף.\r\n', 'utf8'));
 
-for (const file of ['install.ps1', 'prepare.ps1', 'prepare-lib.ps1', 'manage.ps1', 'maintenance-agent.ps1', 'prepare-computer.ps1']) {
+for (const file of ['install.ps1', 'prepare.ps1', 'prepare-lib.ps1', 'manage.ps1', 'maintenance-agent.ps1', 'prepare-computer.ps1', 'docker-host.ps1', 'wsl-engine.ps1']) {
   put(file, fs.readFileSync(path.join(root, 'windows', file)));
 }
 put('README-he.md', fs.readFileSync(path.join(root, 'windows', 'DISTRIBUTION-README-he.md')));

@@ -41,6 +41,7 @@ vendor('Docker CLI','Apache-2.0','Docker-CLI-Apache-2.0.txt','https://github.com
 vendor('Cursor Agent','Proprietary vendor terms',null,'https://cursor.com/terms-of-service','vendor-terms');
 vendor('Claude Code CLI (installed from npm at build time, not bundled)','Proprietary - Anthropic terms',null,'https://www.anthropic.com/legal/commercial-terms','vendor-terms');
 vendor('Grok Build CLI (optional, off by default, downloaded at build time; source code Apache-2.0 at github.com/xai-org/grok-build, official binary also subject to x.ai terms)','Apache-2.0 source; binary under x.ai terms',null,'https://github.com/xai-org/grok-build','vendor-terms');
+vendor('Built-in Docker engine (optional, not bundled): Docker Engine and Docker Compose from the signed Alpine Linux repository, in an Alpine minirootfs verified by SHA-256, downloaded on the user\'s computer','Apache-2.0 (Docker Engine, Compose); Alpine packages under their own licenses',null,'https://pkgs.alpinelinux.org/package/v3.24/community/x86_64/docker','conditions-required');
 vendor('Docker Desktop (host prerequisite, not bundled)','Separate subscription / vendor terms',null,'https://www.docker.com/legal/docker-subscription-service-agreement/','vendor-terms');
 vendor('Codex CLI','Apache-2.0','Codex-Apache-2.0.txt','https://github.com/openai/codex');
 vendor('Gitleaks (secret scanner, downloaded at build time, version in engine/security-tools.json)','MIT','Gitleaks-MIT.txt','https://github.com/gitleaks/gitleaks');

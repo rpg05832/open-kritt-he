@@ -157,19 +157,59 @@ function Show-Computer{
  $Body.Controls.Clear()
  Add-Status $Body $(if($s.Is64){'ok'}else{'bad'}) 'Windows' $(if($s.Is64){'גרסת 64 ביט, מתאימה.'}else{'נדרש Windows בגרסת 64 ביט.'})
  Add-Status $Body $(if($s.FreeGb -ge 15){'ok'}else{'warn'}) ('מקום פנוי: '+$s.FreeGb+' GB') $(if($s.FreeGb -ge 15){'מספיק להתקנה.'}else{'מומלץ לפחות 15 GB. פנו מקום או חלצו את החבילה לכונן אחר.'})
- if(-not $s.DesktopInstalled -and -not $s.DockerPath){
-  Add-Status $Body 'bad' 'Docker Desktop לא מותקן' 'נדרש כדי להריץ את התוכנה בסביבה מבודדת. הוא חינמי לשימוש אישי ולעסק קטן.' 'הורדה והתקנה' {Install-DockerDesktop}
+ if($s.EngineMode -eq 'wsl' -and $s.WslEngineInstalled -and -not $s.EngineOk){
+  Add-Status $Body 'warn' 'מנוע Docker המובנה כבוי' 'הוא פועל רק כשהתוכנה פועלת, כדי לא לתפוס זיכרון סתם.' 'הפעלת המנוע' {Start-BuiltinEngine}
+ }elseif(-not $s.DesktopInstalled -and -not $s.DockerPath){
+  if($s.WslReady){
+   Add-Status $Body 'info' 'מנוע Docker מובנה (מומלץ)' 'סביבת Linux קטנה של Windows (WSL) שמשמשת רק את התוכנה הזאת. בלי Docker Desktop, בלי תנאי מנוי, כ־400 MB.' 'התקנת המנוע המובנה' {Install-BuiltinEngine}
+  }else{
+   Add-Status $Body 'bad' 'רכיב WSL של Windows כבוי' "המנוע המובנה צריך את WSL, רכיב חינמי של Windows. כדי להפעיל אותו: לחצו ימני על התחל ← Terminal (מנהל) ← הקלידו wsl --install --no-distribution ← הפעילו מחדש את המחשב ופתחו שוב את האשף."
+  }
+  Add-Status $Body 'info' 'או: Docker Desktop' 'תוכנה של חברת Docker עם חלון ניהול משלה. חינמית לשימוש אישי ולעסק קטן; ארגון גדול צריך מנוי.' 'הורדה והתקנה' {Install-DockerDesktop}
  }elseif(-not $s.OsType){
   Add-Status $Body 'warn' 'Docker Desktop מותקן אבל כבוי' 'הפעילו אותו והמתינו כדקה, עד שהכיתוב "Engine running" מופיע בחלון של Docker.' 'הפעלת Docker' {Start-DockerDesktop}
  }elseif(-not $s.EngineOk){
   Add-Status $Body 'bad' 'Docker במצב Windows containers' 'בתפריט של Docker (סמל הלוויתן ליד השעון) בחרו "Switch to Linux containers".'
  }else{
-  Add-Status $Body 'ok' 'Docker פועל' ('זיכרון זמין ל־Docker: '+$s.MemGb+' GB. התוכנה מותאמת למגבלה הזאת ולא תשנה אותה.')
+  Add-Status $Body 'ok' $(if($s.EngineMode -eq 'wsl'){'מנוע Docker המובנה פועל'}else{'Docker פועל'}) ('זיכרון זמין ל־Docker: '+$s.MemGb+' GB. התוכנה מותאמת למגבלה הזאת ולא תשנה אותה.')
   if($s.MemGb -lt 3.5){Add-Status $Body 'warn' 'מעט זיכרון' 'פחות מ־4 GB. התוכנה תעבוד, אבל לאט ובדיקה אחת בכל פעם.'}
  }
  if($s.ImagesBuilt){Add-Status $Body 'info' 'רכיבי התוכנה כבר בנויים' 'בהמשך אפשר לבנות אותם מחדש. הנתונים שלכם נשמרים.'}
  Add-Link 'בדיקה חוזרת' {Show-Computer}
  $script:CanNext=$s.Is64 -and $s.EngineOk; Update-Navigation
+}
+function Start-BuiltinEngine{
+ $Body.Controls.Clear(); Add-Status $Body 'wait' 'מפעיל את מנוע Docker המובנה…' 'זה לוקח כמה שניות.'
+ $script:WslPump={Pump}
+ try{ if(-not (Start-WslEngine $InstallationRoot)){throw 'המנוע לא עלה בתוך דקה. פרטים ב-/var/log/dockerd.log בתוך סביבת OpenKritt.'} }finally{$script:WslPump={}}
+ Show-Computer
+}
+function Install-BuiltinEngine{
+ $terms="יותקן מנוע Docker מובנה, בלי Docker Desktop:`n`n•  סביבת Alpine Linux רשמית (קובץ של כ־3 MB מ־dl-cdn.alpinelinux.org). טביעת האצבע (SHA-256) שלו נבדקת מול הערך הקבוע בתוכנה.`n•  Docker Engine ו־Docker Compose מהמאגר החתום של Alpine. רישיון Apache-2.0, ללא מנוי.`n`nהסביבה נשמרת בתיקייה wsl-engine שליד התוכנה, אינה פתוחה לרשת, ומשתמשת במגבלת הזיכרון הקיימת של WSL. הסרה מלאה של התוכנה מוחקת גם אותה."
+ if(-not (Ask $terms 'התקנת המנוע המובנה')){return}
+ $Body.Controls.Clear(); Add-Status $Body 'wait' 'בודק את החיבור לאתר של Alpine…' 'בודקים מ־Windows אם הסינון מחליף את תעודת האבטחה.'
+ Pump
+ $probe=Invoke-HostProbe 'dl-cdn.alpinelinux.org'
+ if($probe.stage -eq 'dns' -or $probe.stage -eq 'connect'){throw 'אין חיבור לאתר dl-cdn.alpinelinux.org (כתובת או רשת). בדקו את החיבור לאינטרנט ונסו שוב.'}
+ if($probe.root -and $probe.rootOrigin -eq 'local' -and -not (Test-Path -LiteralPath (Join-Path $certificateFolder ($probe.root.Thumbprint+'.crt')))){
+  # A filter or antivirus replaces the site's certificate. Linux inside WSL needs the same root, with the user's approval.
+  $text=(Get-CertificateDescription $probe.root 'local' @('dl-cdn.alpinelinux.org'))+"`n`nהתעודה תותקן רק בתוך המנוע המובנה וברכיבי התוכנה. מאגר האישורים של Windows לא משתנה, ואימות האבטחה נשאר פעיל."
+  if(-not (Ask $text 'אישור תעודת רשת')){throw 'בלי תעודת הרשת אי אפשר להוריד את רכיבי המנוע דרך הסינון. אפשר לבחור שוב ולאשר, או להשתמש ב־Docker Desktop.'}
+  [void](Save-ApprovedCertificate $probe.root $certificateFolder)
+ }
+ $Body.Controls.Clear(); Add-Status $Body 'wait' 'מתקין את מנוע Docker המובנה…' 'מוריד ומאמת את Alpine ואת Docker. בדרך כלל פחות מדקה.'
+ $script:WslPump={Pump}
+ try{
+  try{[void](Install-WslEngine $InstallationRoot)}
+  catch{
+   $message=$_.Exception.Message
+   if($message -match '(?i)certificate|x509|ssl|tls'){throw 'הורדת רכיבי המנוע נכשלה בגלל תעודת אבטחה. כנראה שהסינון משתמש בתעודה שעדיין לא אושרה. עברו לשלב "רשת ותעודות" אחרי שהמנוע יותקן, או פנו לספק הסינון.'}
+   if($message -match '(?i)418|403|blocked'){throw 'הסינון חוסם את מאגר החבילות של Alpine (dl-cdn.alpinelinux.org). בקשו מספק הסינון לפתוח אותו ונסו שוב.'}
+   throw
+  }
+  if(-not (Start-WslEngine $InstallationRoot)){throw 'המנוע הותקן אבל לא עלה. פרטים ב-/var/log/dockerd.log בתוך סביבת OpenKritt.'}
+ }finally{$script:WslPump={}}
+ Show-Computer
 }
 function Start-DockerDesktop{
  $path=Join-Path $env:ProgramFiles 'Docker\Docker\Docker Desktop.exe'
@@ -309,7 +349,7 @@ function Run-Install{
  $script:Installing=$true; Update-Navigation
  $script:Form.Add_FormClosing({param($s,$e) if($script:Installing){$e.Cancel=-not (Ask 'ההתקנה עדיין רצה. לסגור בכל זאת? אפשר להמשיך אחר כך מאותה נקודה.' 'סגירה')}})
  $installer=Join-Path $InstallationRoot 'install.ps1'; if(-not (Test-Path -LiteralPath $installer)){$installer=Join-Path $applicationRoot 'windows\install.ps1'}
- $command="[Console]::OutputEncoding=[Text.Encoding]::UTF8; `$ErrorActionPreference='Stop'; try{ & '"+$installer.Replace("'","''")+"' -TargetRoot '"+$InstallationRoot.Replace("'","''")+"' -AcceptLicense -NoStart -IncludeCursor:$"+$(if($includeCursor){'true'}else{'false'})+" -IncludeGrok:$"+$(if($includeGrok){'true'}else{'false'})+" *>&1 | ForEach-Object { [Console]::Out.WriteLine([string]`$_) }; exit 0 }catch{ [Console]::Out.WriteLine('INSTALL-ERROR:'+`$_.Exception.Message); exit 1 }"
+ $command="[Console]::OutputEncoding=[Text.Encoding]::UTF8; `$ErrorActionPreference='Stop'; try{ & '"+$installer.Replace("'","''")+"' -TargetRoot '"+$InstallationRoot.Replace("'","''")+"' -AcceptLicense -NoStart -DockerEngine '"+$script:System.EngineMode+"' -IncludeCursor:$"+$(if($includeCursor){'true'}else{'false'})+" -IncludeGrok:$"+$(if($includeGrok){'true'}else{'false'})+" *>&1 | ForEach-Object { [Console]::Out.WriteLine([string]`$_) }; exit 0 }catch{ [Console]::Out.WriteLine('INSTALL-ERROR:'+`$_.Exception.Message); exit 1 }"
  $p=New-Object Diagnostics.Process; $p.StartInfo.FileName='powershell.exe'
  $p.StartInfo.Arguments='-NoProfile -ExecutionPolicy Bypass -EncodedCommand '+[Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($command))
  $p.StartInfo.UseShellExecute=$false; $p.StartInfo.CreateNoWindow=$true; $p.StartInfo.RedirectStandardOutput=$true; $p.StartInfo.RedirectStandardError=$true; $p.StartInfo.StandardOutputEncoding=[Text.Encoding]::UTF8

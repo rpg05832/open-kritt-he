@@ -51,7 +51,7 @@ if($notice -notmatch 'Harel Rom' -or $notice -notmatch 'Gabriel Balko' -or $noti
 Write-Output 'PASS: LICENSE, notices, inventory, original authors and adaptation credit present'
 
 # 5. PowerShell syntax of every Windows script.
-foreach($script in @('install.ps1','prepare.ps1','prepare-lib.ps1','manage.ps1','maintenance-agent.ps1','prepare-computer.ps1')){
+foreach($script in @('install.ps1','prepare.ps1','prepare-lib.ps1','manage.ps1','maintenance-agent.ps1','prepare-computer.ps1','docker-host.ps1','wsl-engine.ps1')){
  $tokens=$null; $errors=$null
  [void][Management.Automation.Language.Parser]::ParseFile((Join-Path $ReleaseRoot $script),[ref]$tokens,[ref]$errors)
  if($errors.Count){throw ('PowerShell syntax error: '+$script+' '+$errors[0].Message)}

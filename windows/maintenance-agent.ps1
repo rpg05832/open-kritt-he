@@ -8,8 +8,8 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 Add-Type -AssemblyName System.IO.Compression
 # Docker may be missing or stopped; the agent must still start so the user can
 # open the preparation wizard from the maintenance page.
-$Docker=(Get-Command docker.exe -ErrorAction SilentlyContinue).Source
-if(-not $Docker){$Docker=Join-Path $env:ProgramFiles 'Docker\Docker\resources\bin\docker.exe'}
+. (Join-Path $PSScriptRoot 'docker-host.ps1')
+$EngineMode=Get-DockerEngineMode (Join-Path $App '.env')
 function Json-Write($path,$value){
  $text=ConvertTo-Json -InputObject $value -Depth 30
  $temporary=$path+'.'+[guid]::NewGuid().ToString('N')+'.tmp'
@@ -23,9 +23,11 @@ function Json-Write($path,$value){
 }
 function Json-Read($path){Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json}
 function Run-Docker([string[]]$Arguments,[int]$Timeout=120){
- if(-not (Test-Path -LiteralPath $Docker)){throw 'Docker Desktop אינו מותקן. פתחו את "בדיקה ותיקון" במסך התחזוקה.'}
- $p=New-Object Diagnostics.Process; $p.StartInfo.FileName=$Docker
- $p.StartInfo.Arguments=($Arguments|ForEach-Object{'"'+(($_ -replace '(\\*)"','$1$1\"') -replace '(\\+)$','$1$1')+'"'}) -join ' '
+ if(-not (Test-DockerEngineInstalled $EngineMode)){throw ((Get-DockerEngineName $EngineMode)+' אינו מותקן. פתחו את "בדיקה ותיקון" במסך התחזוקה.')}
+ $call=Get-DockerCall $EngineMode $Arguments
+ $p=New-Object Diagnostics.Process; $p.StartInfo.FileName=$call.File; $p.StartInfo.Arguments=$call.CommandLine
+ # Compose resolves COMPOSE_FILE (prebuilt-image mode) relative to the working folder.
+ $p.StartInfo.WorkingDirectory=$(if(Test-Path -LiteralPath $App){$App}else{$Root})
  $p.StartInfo.UseShellExecute=$false; $p.StartInfo.CreateNoWindow=$true
  $p.StartInfo.RedirectStandardOutput=$true; $p.StartInfo.RedirectStandardError=$true
  [void]$p.Start(); $o=$p.StandardOutput.ReadToEndAsync(); $e=$p.StandardError.ReadToEndAsync()
@@ -146,7 +148,7 @@ function Restore-Source([string]$zipFile,[string[]]$removeFiles){
 function Sync-RootScripts {
  # app/windows is the source of truth; the copies next to app/ are what the
  # shortcuts start. A running script keeps its loaded copy until restarted.
- foreach($name in @('manage.ps1','maintenance-agent.ps1','prepare.ps1','prepare-lib.ps1','install.ps1')){
+ foreach($name in @('manage.ps1','maintenance-agent.ps1','prepare.ps1','prepare-lib.ps1','install.ps1','docker-host.ps1','wsl-engine.ps1')){
   $source=Join-Path $App ('windows\'+$name); if(Test-Path -LiteralPath $source){Copy-Item -LiteralPath $source -Destination (Join-Path $Root $name) -Force}
  }
 }

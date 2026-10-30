@@ -1,5 +1,6 @@
 ﻿# Shared, UI-free helpers for prepare.ps1 (and prepare-tests.ps1).
 # Nothing here changes the Windows trust store or disables TLS verification.
+. (Join-Path $PSScriptRoot 'docker-host.ps1')
 
 
 # Hosts the local build and the scans need. Purpose text is shown to the user.
@@ -44,9 +45,11 @@ Promise.all(targets.map(one)).then(x=>console.log('PROBE:'+JSON.stringify(x)));
 
 function Invoke-Pumped {
  # Runs an executable without freezing the window. Returns Code/Out/Err.
+ # FilePath 'wsl-docker' means docker inside the built-in WSL engine (docker-host.ps1).
  param([string]$FilePath,[string[]]$Arguments,[int]$TimeoutSeconds=60,[scriptblock]$Pump={})
+ if($FilePath -eq 'wsl-docker'){$call=Get-DockerCall 'wsl' $Arguments; $FilePath=$call.File; $Arguments=$call.List}
  $p=New-Object Diagnostics.Process; $p.StartInfo.FileName=$FilePath
- $p.StartInfo.Arguments=($Arguments|ForEach-Object{'"'+(($_ -replace '(\\*)"','$1$1\"') -replace '(\\+)$','$1$1')+'"'}) -join ' '
+ $p.StartInfo.Arguments=($Arguments|ForEach-Object{ if($_ -ne '' -and $_ -notmatch '[\s"]'){$_}else{'"'+(($_ -replace '(\\*)"','$1$1\"') -replace '(\\+)$','$1$1')+'"'} }) -join ' '
  $p.StartInfo.UseShellExecute=$false; $p.StartInfo.CreateNoWindow=$true
  $p.StartInfo.RedirectStandardOutput=$true; $p.StartInfo.RedirectStandardError=$true
  try{[void]$p.Start()}catch{return [pscustomobject]@{Code=-1;Out='';Err=$_.Exception.Message;TimedOut=$false}}
@@ -172,7 +175,7 @@ function Invoke-HostProbe {
  # Windows-side check, used when Docker is not running yet. Verification stays on:
  # the callback only records what Windows decided.
  param([string]$HostName,[int]$TimeoutMs=7000)
- $r=[ordered]@{host=$HostName;stage='';code='';rootSubject='';rootOrigin='';policyErrors=''}
+ $r=[ordered]@{host=$HostName;stage='';code='';rootSubject='';rootOrigin='';policyErrors='';root=$null}
  try{[void][Net.Dns]::GetHostAddresses($HostName)}catch{$r.stage='dns';return [pscustomobject]$r}
  $client=New-Object Net.Sockets.TcpClient
  try{
@@ -185,7 +188,7 @@ function Invoke-HostProbe {
    try{$client.ReceiveTimeout=$TimeoutMs; $client.SendTimeout=$TimeoutMs; $stream.AuthenticateAsClient($HostName); $r.stage='http'}
    catch{$r.stage=if($state.errors -ne 'None'){'tls'}else{'connect'}}
    $r.policyErrors=$state.errors
-   if($state.chain){$r.rootSubject=$state.chain.Subject; $r.rootOrigin=Get-RootOrigin $state.chain}
+   if($state.chain){$r.rootSubject=$state.chain.Subject; $r.rootOrigin=Get-RootOrigin $state.chain; $r.root=$state.chain}
   }finally{$stream.Dispose()}
  }finally{$client.Dispose()}
  return [pscustomobject]$r
@@ -203,7 +206,14 @@ function Get-SystemState {
  $drive=New-Object IO.DriveInfo($InstallationRoot.Substring(0,1))
  $s=[ordered]@{Is64=[Environment]::Is64BitOperatingSystem;FreeGb=[math]::Round($drive.AvailableFreeSpace/1GB,1);Wsl=[bool](Get-Command wsl.exe -ErrorAction SilentlyContinue)
   DesktopPath=$desktop;DesktopInstalled=(Test-Path -LiteralPath $desktop);DockerPath=(Get-DockerPath);EngineOk=$false;OsType='';MemGb=0;Compose='';ImagesBuilt=$false;EngineRunning=$false
-  InstalledHere=(Test-Path -LiteralPath (Join-Path $InstallationRoot '.maintenance\installed-here'))}
+  InstalledHere=(Test-Path -LiteralPath (Join-Path $InstallationRoot '.maintenance\installed-here'))
+  EngineMode='desktop';WslReady=$false;WslEngineInstalled=$false}
+ # Engine: the choice saved in .env; otherwise the built-in engine when it exists and Docker Desktop does not.
+ $environmentFile=Join-Path $InstallationRoot 'app\.env'
+ $saved=if(Test-Path -LiteralPath $environmentFile){[regex]::Match([IO.File]::ReadAllText($environmentFile),'(?m)^OPEN_KRITT_DOCKER_ENGINE=(wsl|desktop)\s*$')}else{$null}
+ if($s.Wsl){$s.WslEngineInstalled=Test-WslEngineInstalled; if(-not $s.WslEngineInstalled){$s.WslReady=Test-WslAvailable}else{$s.WslReady=$true}}
+ if($saved -and $saved.Success){$s.EngineMode=$saved.Groups[1].Value}elseif($s.WslEngineInstalled -and -not $s.DesktopInstalled){$s.EngineMode='wsl'}
+ if($s.EngineMode -eq 'wsl'){$s.DockerPath=$(if($s.WslEngineInstalled){'wsl-docker'}else{$null})}
  if($s.DockerPath){
   $info=Invoke-Pumped $s.DockerPath @('info','--format','{{.OSType}}|{{.MemTotal}}') 15 $Pump
   if($info.Code -eq 0 -and $info.Out.Trim()){
