@@ -62,9 +62,17 @@ jobs:
           # by the tag author and could be back-dated to skip the 14-day wait.
           cutoff=$(date -u -d '14 days ago' +%Y-%m-%dT%H:%M:%SZ)
           tag=$(gh api 'repos/Kritt-ai/open-kritt/releases?per_page=30' --jq \
-            "[.[] | select(.draft == false and .prerelease == false and .published_at <= \"$cutoff\" and (.tag_name | test(\"^v[0-9]+[.][0-9]+[.][0-9]+$\")))][0].tag_name // empty")
-          if [ -z "$tag" ] || git merge-base --is-ancestor "$tag" HEAD; then echo "upstream: nothing new"; exit 0; fi
-          if git merge --no-edit "$tag"; then
+            "[.[] | select(.draft == false and .prerelease == false and .published_at <= \"$cutoff\" and .updated_at <= \"$cutoff\" and (.tag_name | test(\"^v[0-9]+[.][0-9]+[.][0-9]+$\")))][0].tag_name // empty")
+          if [ -z "$tag" ]; then echo "upstream: nothing new"; exit 0; fi
+          # A tag can be moved after the release was published. Merge the exact commit,
+          # and only when GitHub and the fetched tag agree on it and it is old enough too.
+          sha=$(gh api "repos/Kritt-ai/open-kritt/commits/$tag" --jq '.sha')
+          committed=$(gh api "repos/Kritt-ai/open-kritt/commits/$sha" --jq '.commit.committer.date')
+          if [ "$(git rev-parse "refs/tags/$tag^{commit}")" != "$sha" ] || [[ "$committed" > "$cutoff" ]]; then
+            echo "upstream: $tag points to an unexpected or too recent commit; skipped"; exit 0
+          fi
+          if git merge-base --is-ancestor "$sha" HEAD; then echo "upstream: nothing new"; exit 0; fi
+          if git merge --no-edit -m "Merge upstream $tag ($sha)" "$sha"; then
             echo "upstream: merged $tag"
           else
             git merge --abort
