@@ -16,11 +16,17 @@ Safety: the target host is resolved and rejected if it points anywhere internal
 unless local-site scanning was turned on. ZAP runs on the default bridge, so it
 can reach the public internet but not the program's compose-network services by
 name. The scan never runs destructive, site-wiping payloads.
+
+Residual limitation: the validated public IP is pinned for the primary host, but
+a cross-host redirect during an active/full scan is not independently re-checked
+here — the same host-level egress policy the project's threat model already asks
+operators to enforce (docs/threat-model.md) covers that case.
 """
 
 import ipaddress
 import json
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -38,29 +44,54 @@ _RISK = {"3": "סיכון גבוה (לפי הכלי)", "2": "סיכון בינו
 _MODE_MINUTES = {"passive": 20, "active": 45, "full": 75}
 
 
-def _host_is_internal(host: str) -> bool:
-    """Mirror of the backend classifier, for the per-request safety re-check."""
+_CGNAT = ipaddress.ip_network("100.64.0.0/10")
+
+
+def _ip_is_internal(ip: ipaddress._BaseAddress) -> bool:
+    if ip.is_loopback or ip.is_private or ip.is_link_local or ip.is_unspecified or ip.is_reserved:
+        return True
+    return ip.version == 4 and ip in _CGNAT
+
+
+def _resolve_public_ip(host: str):
+    """Resolve `host` and return a single public IP to pin, or None if anything
+    about it is internal or unresolvable. Pinning the IP closes the DNS-rebinding
+    window: ZAP connects to this address instead of re-resolving the name."""
     host = (host or "").strip().strip("[]").rstrip(".").lower()
     if not host:
-        return True
+        return None
     if host in ("localhost", "host.docker.internal") or host.endswith((".localhost", ".local", ".internal")):
-        return True
+        return None
     try:
         infos = socket.getaddrinfo(host, None)
     except OSError:
-        return True
+        return None
+    chosen = None
     for info in infos:
         address = info[4][0].split("%")[0]
         try:
             ip = ipaddress.ip_address(address)
         except ValueError:
-            return True
-        if ip.is_loopback or ip.is_private or ip.is_link_local or ip.is_unspecified or ip.is_reserved:
-            return True
-        # CGNAT 100.64.0.0/10 is "global" to ipaddress but is not a public site.
-        if ip.version == 4 and ip in ipaddress.ip_network("100.64.0.0/10"):
-            return True
-    return False
+            return None
+        if _ip_is_internal(ip):
+            return None  # any internal address at all disqualifies the target
+        if chosen is None:
+            chosen = address
+    return chosen
+
+
+def _host_is_internal(host: str) -> bool:
+    """True when the host is not a safely resolvable public address."""
+    return _resolve_public_ip(host) is None
+
+
+_CONTROL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
+def _clean(value, limit):
+    """ZAP alerts echo attacker-influenced text. Keep it as plain, bounded data
+    (control characters stripped) so it reaches the AI as a lead, not as markup."""
+    return _CONTROL.sub(" ", str(value or "")).strip()[:limit]
 
 
 def _zap_command(url, mode, report_name):
@@ -77,12 +108,15 @@ def run_website_scan(url, *, mode="passive", scan_id=None, allow_local=False, ti
     if mode not in _MODE_MINUTES:
         return {"status": "failed", "reason": "מצב סריקה לא נתמך", "candidates": []}
     host = urlsplit(url).hostname
-    if not allow_local and _host_is_internal(host or ""):
-        return {
-            "status": "failed",
-            "reason": "כתובת האתר מצביעה על רשת פנימית; הסריקה נעצרה מטעמי בטיחות.",
-            "candidates": [],
-        }
+    pinned_ip = None
+    if not allow_local:
+        pinned_ip = _resolve_public_ip(host or "")
+        if pinned_ip is None:
+            return {
+                "status": "failed",
+                "reason": "כתובת האתר מצביעה על רשת פנימית או אינה ניתנת לפתרון; הסריקה נעצרה מטעמי בטיחות.",
+                "candidates": [],
+            }
 
     docker = shutil.which(os.getenv("ENGINE_DOCKER_BIN", "docker"))
     if not docker:
@@ -119,6 +153,10 @@ def run_website_scan(url, *, mode="passive", scan_id=None, allow_local=False, ti
     ]
     if allow_local:
         command += ["--add-host", "host.docker.internal:host-gateway"]
+    elif pinned_ip and host:
+        # Pin the validated public IP so ZAP uses it instead of re-resolving the
+        # name (closes the DNS-rebinding window for the primary host).
+        command += ["--add-host", f"{host}:{pinned_ip}"]
     command += [image] + _zap_command(url, mode, report_name)
 
     budget = timeout or (_MODE_MINUTES.get(mode, 20) * 60 + 600)
@@ -142,19 +180,19 @@ def run_website_scan(url, *, mode="passive", scan_id=None, allow_local=False, ti
             instances = alert.get("instances") or [{}]
             first = instances[0]
             risk = _RISK.get(str(alert.get("riskcode")), "")
-            explanation = (alert.get("desc") or alert.get("alert") or "").strip()
+            explanation = _clean(alert.get("desc") or alert.get("alert"), 1500)
             if alert.get("solution"):
-                explanation += "\nתיקון מוצע: " + alert["solution"].strip()
+                explanation += "\nתיקון מוצע: " + _clean(alert["solution"], 600)
             candidate = {
-                "rule": "zap/" + str(alert.get("pluginid") or alert.get("alertRef") or alert.get("alert")),
-                "file": first.get("uri") or site.get("@name") or url,
+                "rule": _clean("zap/" + str(alert.get("pluginid") or alert.get("alertRef") or alert.get("alert")), 120),
+                "file": _clean(first.get("uri") or site.get("@name") or url, 2048),
                 "line": 0,
                 "explanation": (risk + ": " if risk else "") + explanation,
                 "verified": False,
                 "tool_risk": risk,
-                "method": first.get("method", ""),
-                "param": first.get("param", ""),
-                "evidence": (first.get("evidence") or "")[:300],
+                "method": _clean(first.get("method"), 10),
+                "param": _clean(first.get("param"), 120),
+                "evidence": _clean(first.get("evidence"), 300),
                 "instance_count": len(instances),
             }
             candidates.append(candidate)

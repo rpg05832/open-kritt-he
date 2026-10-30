@@ -27,7 +27,7 @@ def test_full_mode_uses_the_full_scan_script_at_max_strength():
 
 
 def test_internal_target_blocks_the_scan_without_opt_in(monkeypatch):
-    monkeypatch.setattr(website_scan, "_host_is_internal", lambda host: True)
+    # A literal private address resolves to itself, so no DNS is needed here.
     called = []
     monkeypatch.setattr(website_scan.subprocess, "run", lambda *a, **k: called.append(a))
     result = website_scan.run_website_scan("http://192.168.1.1", mode="active", allow_local=False)
@@ -35,9 +35,33 @@ def test_internal_target_blocks_the_scan_without_opt_in(monkeypatch):
     assert not called  # ZAP must never launch against a blocked target
 
 
+def test_rebinding_is_closed_by_pinning_the_validated_ip(monkeypatch, tmp_path):
+    monkeypatch.setenv("ENGINE_DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(website_scan, "_resolve_public_ip", lambda host: "93.184.216.34")
+    monkeypatch.setattr(website_scan.shutil, "which", lambda *a, **k: "/usr/bin/docker")
+    monkeypatch.setattr(website_scan, "_host_path_for_engine_data_path", lambda p: p, raising=False)
+    import open_kritt_engine.harnesses as harnesses
+
+    monkeypatch.setattr(harnesses, "_host_path_for_engine_data_path", lambda p: p)
+    captured = {}
+
+    def fake_run(command, **kwargs):
+        captured["command"] = command
+
+        class R:
+            returncode = 2
+
+        return R()
+
+    monkeypatch.setattr(website_scan.subprocess, "run", fake_run)
+    website_scan.run_website_scan("https://example.com/app", mode="passive", scan_id=1)
+    assert "--add-host" in captured["command"]
+    assert "example.com:93.184.216.34" in captured["command"]
+
+
 def test_report_parses_into_candidates_in_preflight_format(monkeypatch, tmp_path):
     monkeypatch.setenv("ENGINE_DATA_DIR", str(tmp_path))
-    monkeypatch.setattr(website_scan, "_host_is_internal", lambda host: False)
+    monkeypatch.setattr(website_scan, "_resolve_public_ip", lambda host: "93.184.216.34")
     monkeypatch.setattr(website_scan.shutil, "which", lambda *a, **k: "/usr/bin/docker")
     monkeypatch.setattr(website_scan, "_host_path_for_engine_data_path", lambda p: p, raising=False)
     import open_kritt_engine.harnesses as harnesses
