@@ -145,7 +145,20 @@ jobs:
           @{ distribution = 'open-kritt-hebrew'; format = 2; version = $env:TAG; images = $images } |
             ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 legal/images.json
       - name: Install Inno Setup
-        run: choco install innosetup --version 6.7.0 -y --no-progress
+        shell: pwsh
+        # The hosted Windows runner may already ship a newer Inno Setup, which
+        # makes a pinned `choco install` fail. Install the pin only when absent.
+        run: |
+          $iscc = @(
+            "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe",
+            "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+            "$env:ProgramFiles\Inno Setup 6\ISCC.exe"
+          )
+          if ($iscc | Where-Object { Test-Path $_ }) {
+            Write-Host 'Inno Setup already present; using it.'
+          } else {
+            choco install innosetup --version 6.7.0 -y --no-progress
+          }
       - name: Source package, Setup.exe and update package
         shell: pwsh
         run: |
