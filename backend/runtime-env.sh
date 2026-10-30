@@ -22,7 +22,13 @@ if ls /run/approved-ca/*.crt >/dev/null 2>&1; then
   cat "$SYSTEM_BUNDLE" /run/approved-ca/*.crt > "$out.tmp"
   mv "$out.tmp" "$out"
   bundle="$out"
+elif [ -w "$RUNTIME_ROOT" ]; then
+  # No approved certificate any more (for example the user deleted it): drop the
+  # shared bundle so scan runners stop trusting a revoked CA.
+  rm -f "$RUNTIME_ROOT/ca/bundle.pem"
 elif [ -f "$RUNTIME_ROOT/ca/bundle.pem" ]; then
+  # Read-only consumers (scan runners) follow the engine, which rebuilds or
+  # removes this file on every start.
   bundle="$RUNTIME_ROOT/ca/bundle.pem"
 fi
 

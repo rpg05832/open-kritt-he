@@ -63,6 +63,28 @@ function Owned-Runners {
   if($owned){$id}
  }
 }
+# All installations share the Docker project name and container names, so every
+# action first checks that the running containers belong to THIS folder.
+function Get-CanonicalPath([string]$Path){ if([string]::IsNullOrWhiteSpace($Path)){return ''}
+ $full=[IO.Path]::GetFullPath($Path).TrimEnd('\'); $parts=$full.Split('\'); $current=$parts[0]+'\'
+ foreach($part in $parts[1..($parts.Length-1)]){
+  $current=Join-Path $current $part
+  $item=Get-Item -LiteralPath $current -Force -ErrorAction SilentlyContinue
+  if($item -and $item.LinkType -in @('Junction','SymbolicLink') -and $item.Target){$current=[IO.Path]::GetFullPath(@($item.Target)[0])}
+ }
+ return $current.TrimEnd('\')
+}
+function Test-SamePath([string]$A,[string]$B){ return (Get-CanonicalPath $A) -ieq (Get-CanonicalPath $B) }
+function Get-RunningInstallation {
+ # Folder of the installation whose containers exist now, or $null when there are none.
+ $ids=(Run-Docker @('ps','-aq','--filter','label=com.docker.compose.project=openkritt-he','--filter','label=com.docker.compose.project.working_dir') 20 -AllowFailure).Out -split '\s+' | Where-Object {$_ -match '^[a-f0-9]{12,64}$'}
+ if(-not $ids){return $null}
+ # JSON output avoids quoting a label name through the command line.
+ $labels=(Run-Docker @('inspect','--format','{{json .Config.Labels}}',@($ids)[0]) 20 -AllowFailure).Out
+ try{$folder=($labels | ConvertFrom-Json).'com.docker.compose.project.working_dir'}catch{$folder=$null}
+ if($folder){return [string]$folder}; return $null
+}
+
 function Stop-App {
  $maintenancePid=Join-Path $Root '.maintenance/server.pid'
  if(Test-Path -LiteralPath $maintenancePid){
@@ -70,6 +92,8 @@ function Stop-App {
   if($pidText -match '^\d+$'){$process=Get-CimInstance Win32_Process -Filter ('ProcessId='+$pidText); if($process.Name -eq 'powershell.exe' -and $process.CommandLine -like '*maintenance-agent.ps1*' -and $process.CommandLine -notlike '*-Mode Worker*'){Stop-Process -Id ([int]$pidText) -ErrorAction SilentlyContinue}}
  }
  if(-not (Engine-Ready)){Note 'Docker אינו פעיל; היישום כבר כבוי.'; return}
+ $owner=Get-RunningInstallation
+ if($owner -and -not (Test-SamePath $owner $App)){Note ('התוכנה שפועלת שייכת להתקנה אחרת ('+$owner+'), ולכן לא נעצרה.'); return}
  Note 'עוצר את Open-Kritt ושומר את הנתונים...'
  # Stop coordinator first so no new jobs can be created during runner cleanup.
  [void](Compose @('stop','engine'))
@@ -95,7 +119,10 @@ function Start-App {
  if(Test-Path -LiteralPath $maintenance){Start-Process -FilePath 'powershell.exe' -ArgumentList ('-NoProfile -ExecutionPolicy Bypass -File "'+$maintenance+'"') -WindowStyle Hidden}
  Update-PortablePaths
  if(-not (Test-Path -LiteralPath "$App\docker-compose.yml")){throw 'תיקיית היישום חסרה. ייתכן שהיישום הוסר.'}
- Ensure-Engine; Note 'מפעיל את Open-Kritt...'; [void](Compose @('up','-d','--no-build') 240)
+ Ensure-Engine
+ $owner=Get-RunningInstallation
+ if($owner -and -not (Test-SamePath $owner $App)){throw ('במחשב קיימת התקנה אחרת של התוכנה ('+$owner+'). עצרו אותה מהקיצור שלה לפני הפעלת ההתקנה הזאת.')}
+ Note 'מפעיל את Open-Kritt...'; [void](Compose @('up','-d','--no-build') 240)
  $until=(Get-Date).AddSeconds(120)
  do { $ok=$true; foreach($url in @('http://localhost:3002/api/health','http://localhost:5173')){try{[void](Invoke-WebRequest -UseBasicParsing -Uri $url -TimeoutSec 3)}catch{$ok=$false}}; if($ok){Note 'Open-Kritt מוכן. הדפדפן נפתח.'; Start-Process 'http://localhost:5173'; return}; Pause-Pump 2 }while((Get-Date) -lt $until)
  throw 'השירותים הופעלו, אך בדיקת הזמינות טרם הצליחה. בדקו מצב בעוד דקה.'
@@ -120,6 +147,8 @@ function Uninstall-App {
  if($delete -and [Windows.Forms.MessageBox]::Show('אישור אחרון: למחוק לצמיתות את נתוני Open-Kritt?','מחיקה לצמיתות','YesNo','Warning') -ne 'Yes'){return}
  Assert-AppTree
  if(-not (Engine-Ready)){throw 'יש להפעיל Docker לפני הסרה כדי להסיר רק את משאבי היישום באופן מסודר.'}
+ $owner=Get-RunningInstallation
+ if($owner -and -not (Test-SamePath $owner $App)){throw ('השירותים הפועלים שייכים להתקנה אחרת ('+$owner+'). ההסרה של ההתקנה הזאת לא תיגע בהם; הסירו את הקבצים בלבד או הסירו קודם את ההתקנה האחרת.')}
  Stop-App
  foreach($id in @(Owned-Runners)){[void](Run-Docker @('rm','-v',$id))}
  $anonymous=@(); $ids=(Run-Docker @('ps','-aq','--filter','label=com.docker.compose.project=openkritt-he')).Out -split '\s+' | Where-Object {$_ -match '^[a-f0-9]{12,64}$'}
