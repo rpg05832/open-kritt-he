@@ -1,4 +1,4 @@
-FROM python:3.12.14-slim-bookworm
+FROM python:3.15.0-slim-bookworm
 
 # Optional public CA certificates approved by the user in prepare.ps1 (for networks
 # that inspect TLS, e.g. a filtering provider). Empty by default; TLS verification stays on.

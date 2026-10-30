@@ -1,8 +1,8 @@
-FROM docker:29.8.0-cli AS docker-cli
+FROM docker:29.9.2-cli AS docker-cli
 
 FROM node:24.15.0-bookworm-slim AS node_runtime
 
-FROM python:3.12.14-slim-bookworm
+FROM python:3.15.0-slim-bookworm
 
 # Optional public CA certificates approved by the user in prepare.ps1 (for networks
 # that inspect TLS, e.g. a filtering provider). Empty by default; TLS verification stays on.
