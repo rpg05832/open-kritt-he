@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.5.0](https://github.com/rpg05832/open-kritt-he/compare/v1.4.1...v1.5.0) (2026-10-30)
+
+
+### Features
+
+* **accounts:** show verified Daybreak access ([#170](https://github.com/rpg05832/open-kritt-he/issues/170)) ([ad68ab5](https://github.com/rpg05832/open-kritt-he/commit/ad68ab514bdee94380afd638e59005a429c69036))
+* Hebrew distribution with install wizard, local scanners and code-quality scans ([c5f7615](https://github.com/rpg05832/open-kritt-he/commit/c5f761557ee51133969f57cb086f6b28f13af73a))
+* Hebrew edition ships without the upstream example workflows and ranker ([71529c6](https://github.com/rpg05832/open-kritt-he/commit/71529c6ee5dd1a71f7ba1c8f808f1e0cb2865634))
+* prebuilt images on GitHub with runtime-installed vendor CLIs and weekly hands-off updates ([ad84205](https://github.com/rpg05832/open-kritt-he/commit/ad84205b3ed92ae5714ce3d02fa2e051d07e512e))
+* **ui:** Hebrew severity rankers; user-facing license and update screens ([73d351d](https://github.com/rpg05832/open-kritt-he/commit/73d351d3d144cad8f67e48cfc8240539a66f6afd))
+* **ui:** website scan kind — URL target, authorization, three modes ([4f7092c](https://github.com/rpg05832/open-kritt-he/commit/4f7092cdd9c3602f4cd418d690785be3013ae909))
+* website (DAST) scan target — backend validation and ZAP engine run ([18f8eb7](https://github.com/rpg05832/open-kritt-he/commit/18f8eb73e87c5ab9530ecbfe9394530a6c1333a7))
+* **windows:** built-in Docker engine without Docker Desktop ([d2d83e7](https://github.com/rpg05832/open-kritt-he/commit/d2d83e7c39a32881fa53b6b17f72d22743a19ede))
+* **windows:** one-click per-user Setup.exe (Inno Setup, Hebrew, no admin) ([17cac5a](https://github.com/rpg05832/open-kritt-he/commit/17cac5aba3df94d3b0a342735f4d1f5f408239e3))
+
+
+### Bug Fixes
+
+* **ci:** merge the exact upstream commit, not a movable tag ([c741d72](https://github.com/rpg05832/open-kritt-he/commit/c741d72d9fe8c4bc3c293270f3329c9efd23232f))
+* issues found by a full install on the built-in WSL engine ([9a3fb12](https://github.com/rpg05832/open-kritt-he/commit/9a3fb1292305c47a135b2307ad15722d49e7ee62))
+* protect a running installation and tighten release safety ([3d459cb](https://github.com/rpg05832/open-kritt-he/commit/3d459cb04db1666bb8b49b85bd4c8b6bf762567f))
+* **ui:** translate scan status filters and source pickers ([c936219](https://github.com/rpg05832/open-kritt-he/commit/c936219ff4c1f4a31a1c07c4070db910256b907f))
+
 ## [1.4.1](https://github.com/Kritt-ai/open-kritt/compare/v1.4.0...v1.4.1) (2026-08-16)
 
 
