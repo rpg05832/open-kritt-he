@@ -1,4 +1,4 @@
-FROM postgres:16.4-alpine3.20
+FROM postgres:17.5-alpine3.20
 
 # Optional public CA certificates approved by the user in prepare.ps1 (for networks
 # that inspect TLS, e.g. a filtering provider). Empty by default; TLS verification stays on.
