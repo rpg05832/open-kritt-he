@@ -161,10 +161,15 @@ jobs:
           }
       - name: Source package, Setup.exe and update package
         shell: pwsh
+        env:
+          # Private signing key (RSA) for the auto-update manifest. Set as a repo
+          # secret; the public half ships in app/windows/update-public-key.json.
+          OPEN_KRITT_UPDATE_PRIVATE_KEY: ${{ secrets.OPEN_KRITT_UPDATE_PRIVATE_KEY }}
         run: |
           node legal/build-distribution.cjs "$PWD/../dist-out/release" --zip
           node legal/build-setup.cjs
           ./legal/test-distribution.ps1 -ReleaseRoot "$PWD/../dist-out/release" -SkipDocker
+          if (-not $env:OPEN_KRITT_UPDATE_PRIVATE_KEY) { throw 'OPEN_KRITT_UPDATE_PRIVATE_KEY secret is not set; refusing to publish an unsigned update.' }
           node legal/build-update-package.cjs "$env:TAG" "$PWD/../dist-out"
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:

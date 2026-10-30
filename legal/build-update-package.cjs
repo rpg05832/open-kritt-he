@@ -45,5 +45,16 @@ const script = 'Add-Type -AssemblyName System.IO.Compression.FileSystem; $base=(
 cp.execFileSync(process.platform === 'win32' ? 'powershell.exe' : 'pwsh', ['-NoProfile', '-Command', script], { env: { ...process.env, K_ZIP: zip, K_STAGE: stage }, stdio: 'inherit' });
 fs.rmSync(stage, { recursive: true, force: true });
 const sha256 = crypto.createHash('sha256').update(fs.readFileSync(zip)).digest('hex');
-fs.writeFileSync(path.join(output, 'open-kritt-hebrew-update.json'), JSON.stringify({ distribution: 'open-kritt-hebrew', format: 1, version, sha256 }, null, 2));
-console.log(JSON.stringify({ zip, files: files.length, sha256 }));
+// Sign the hash with the publisher's private key so the installed app can prove
+// the update is authentic (the key comes from a GitHub Actions secret, PEM in
+// OPEN_KRITT_UPDATE_PRIVATE_KEY or a path in OPEN_KRITT_UPDATE_PRIVATE_KEY_FILE).
+const keyPem = process.env.OPEN_KRITT_UPDATE_PRIVATE_KEY
+  || (process.env.OPEN_KRITT_UPDATE_PRIVATE_KEY_FILE && fs.readFileSync(process.env.OPEN_KRITT_UPDATE_PRIVATE_KEY_FILE, 'utf8'));
+const manifest = { distribution: 'open-kritt-hebrew', format: keyPem ? 2 : 1, version, sha256 };
+if (keyPem) {
+  manifest.signature = crypto.sign('sha256', Buffer.from(sha256, 'utf8'), crypto.createPrivateKey(keyPem)).toString('base64');
+} else {
+  console.warn('WARNING: no signing key; the update package is unsigned and signed-update clients will reject it.');
+}
+fs.writeFileSync(path.join(output, 'open-kritt-hebrew-update.json'), JSON.stringify(manifest, null, 2));
+console.log(JSON.stringify({ zip, files: files.length, sha256, signed: Boolean(keyPem) }));

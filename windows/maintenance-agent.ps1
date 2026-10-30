@@ -129,6 +129,23 @@ function Get-Source {
  }
  return ''
 }
+function Test-UpdateSignature([string]$message,[string]$signatureBase64){
+ # Verifies an RSA (PKCS#1 v1.5, SHA-256) signature over $message using the public
+ # key shipped with the app. The private key lives only with the publisher, so a
+ # valid signature proves this update was authorised even if the release was tampered.
+ $keyFile=Join-Path $App 'windows/update-public-key.json'
+ if(-not (Test-Path -LiteralPath $keyFile)){return $null} # pre-signing installs verify by hash only
+ if([string]::IsNullOrWhiteSpace($signatureBase64)){return $false}
+ try{
+  $key=Json-Read $keyFile
+  $fromB64Url={param($s) $s=$s.Replace('-','+').Replace('_','/'); switch($s.Length % 4){2{$s+='=='}3{$s+='='}}; [Convert]::FromBase64String($s)}
+  $rsa=[Security.Cryptography.RSA]::Create()
+  $p=New-Object Security.Cryptography.RSAParameters
+  $p.Modulus=& $fromB64Url $key.n; $p.Exponent=& $fromB64Url $key.e
+  $rsa.ImportParameters($p)
+  return $rsa.VerifyData([Text.Encoding]::UTF8.GetBytes($message),[Convert]::FromBase64String($signatureBase64),[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)
+ }catch{return $false}
+}
 function Check-Release {
  $repository=Get-Source
  if(-not $repository){return @{status='not_configured'; message='בגרסה הזאת עדיין אין מקור עדכונים. הוא יתווסף בגרסה הבאה.'}}
@@ -138,7 +155,10 @@ function Check-Release {
  if($zip.Count -ne 1 -or $manifest.Count -ne 1){throw 'לא נמצאה חבילת הפצה עברית תואמת בגרסה האחרונה.'}
  if($zip[0].size -gt 100MB -or $manifest[0].size -gt 64KB){throw 'חבילת העדכון חורגת ממגבלת הגודל המותרת.'}
  $data=Invoke-RestMethod -Uri $manifest[0].browser_download_url -Headers @{'User-Agent'='Open-Kritt-Hebrew'} -TimeoutSec 15
- if($data.distribution -ne 'open-kritt-hebrew' -or $data.format -ne 1 -or $data.sha256 -notmatch '^[a-fA-F0-9]{64}$'){throw 'קובץ האימות של העדכון אינו תואם להפצה הזאת.'}
+ if($data.distribution -ne 'open-kritt-hebrew' -or $data.format -notin 1,2 -or $data.sha256 -notmatch '^[a-fA-F0-9]{64}$'){throw 'קובץ האימות של העדכון אינו תואם להפצה הזאת.'}
+ # When the app carries a public key, the update must be signed by the publisher.
+ $signatureOk=Test-UpdateSignature $data.sha256 ([string]$data.signature)
+ if($signatureOk -eq $false){throw 'חתימת העדכון אינה תקפה או חסרה. ההתקנה נעצרה מטעמי אבטחה.'}
  $current=Join-Path $Store 'installed-release.json'; $installed=$null
  if(Test-Path -LiteralPath $current){$installed=Json-Read $current}
  return @{status=$(if($installed.sha256 -eq $data.sha256){'current'}else{'available'}); repository=$repository; version=$data.version; sha256=$data.sha256.ToLower(); download=$zip[0].browser_download_url; releaseUrl=$release.html_url}
