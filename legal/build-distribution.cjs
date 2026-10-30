@@ -65,6 +65,7 @@ for (const file of ['install.ps1', 'prepare.ps1', 'prepare-lib.ps1', 'manage.ps1
   put(file, fs.readFileSync(path.join(root, 'windows', file)));
 }
 put('README-he.md', fs.readFileSync(path.join(root, 'windows', 'DISTRIBUTION-README-he.md')));
+put('SETUP-INFO-he.txt', fs.readFileSync(path.join(root, 'windows', 'SETUP-INFO-he.txt')));
 const launchers = {
   'Install.cmd': ['prepare.ps1', ''],
   'Prepare.cmd': ['prepare.ps1', '-Mode Repair'],
