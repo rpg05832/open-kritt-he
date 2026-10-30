@@ -1,15 +1,13 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useFetch } from '../lib/useFetch.js';
 import { usePageChrome } from '../context/ui.jsx';
-import HelpTip from '../components/HelpTip.jsx';
 import { HEBREW_IMPROVEMENTS } from '../lib/hebrewImprovements.js';
 
 const profile = 'https://mitmachim.top/user/%D7%90%D7%A8%D7%99';
 export default function License() {
   usePageChrome([{ label: 'רישיון וקרדיטים', active: true }], null, []);
   const [query, setQuery] = useState('');
-  const { data, error, loading } = useFetch(async () => {
+  const { data } = useFetch(async () => {
     const response = await fetch('/legal/inventory.json');
     if (!response.ok) throw new Error('לא ניתן לטעון את מלאי הרישיונות');
     return response.json();
@@ -36,7 +34,7 @@ export default function License() {
           </a>
           .
         </p>
-        <p>תאריכי השינויים: 29.10.2026–30.10.2026. זו גרסה עצמאית מותאמת; אינה הפצה רשמית של הפרויקט המקורי.</p>
+        <p>זו גרסה עצמאית מותאמת, ואינה גרסה רשמית של הפרויקט המקורי.</p>
         <details id="improvements" className="credit-improvements" open={window.location.hash === '#improvements'}>
           <summary>מה נוסף בגרסה העברית? (לחצו לפתיחה)</summary>
           <ul>
@@ -63,8 +61,8 @@ export default function License() {
           צד שלישי ולכלים חיצוניים יש רישיונות נפרדים.
         </p>
         <p>
-          מותר להשתמש ולשנות לפי הרישיון. בהפצה צריך לספק את המקור המתאים, לשמור הודעות ולציין שינויים. בהפעלת גרסה
-          מותאמת ברשת יש להציע למשתמשים את קוד המקור בהתאם לסעיף 13.
+          מותר להשתמש בתוכנה, לשנות אותה ולשתף אותה לפי תנאי הרישיון. קוד המקור המלא נמצא בתיקיית ההתקנה, בתיקייה{' '}
+          <bdi>app</bdi>.
         </p>
         <p>התוכנה ניתנת כמות שהיא, ללא אחריות במידה שהדין מאפשר. תוצאות הסריקה אינן התחייבות לאיתור כל חולשה.</p>
         <ul>
@@ -89,50 +87,11 @@ export default function License() {
             </a>
           </li>
           <li>
-            <a href="/legal/REVIEW-he.md" download>
-              הורדת דוח הבדיקה בעברית
-            </a>
-          </li>
-          <li>
             <a href="/legal/inventory.json" download>
               הורדת מלאי הרכיבים והרישיונות
             </a>
           </li>
         </ul>
-        <p>
-          מקור הגרסה העצמאית עדיין לא פורסם במאגר הפצה. לפני הפצה לאחרים יש לצרף או לפרסם את המקור המתאים, כולל קובצי
-          הבנייה והניהול. קובצי המקור נמצאים בתיקיית ההתקנה; עותקי מקור של כלי Windows נכללים בתיקיית windows שבחבילת
-          הקוד.
-        </p>
-        <Link to="/maintenance">למסך התחזוקה והכנת חבילת קוד</Link>
-      </section>
-      <section>
-        <h2>
-          ממצאי בדיקת הרישיונות{' '}
-          <HelpTip
-            term="בדיקת רישיונות"
-            description="נבדקו קובצי רישיון ומטא־נתונים של רכיבים ישירים ועקיפים. זיהוי רישיון אינו אישור משפטי להפצת כל החבילה, ובפרט לא להפצת כלים קנייניים או תמונות Docker."
-          />
-        </h2>
-        {loading && <p>טוען את דוח הבדיקה…</p>}
-        {error && <p role="alert">לא ניתן לטעון את הדוח. אין להסיק מכך שההפצה מאושרת.</p>}
-        {data && (
-          <>
-            <p>
-              נבדקו {data.summary.packageRecords} רשומות רכיבים, הכוללות {data.summary.uniquePackages} חבילות וגרסאות
-              שונות בכמה סביבות. נשמרו {data.summary.noticeTexts} נוסחי הודעות ורישוי שונים. תאריך המלאי:{' '}
-              {new Date(data.generatedAt).toLocaleDateString('he-IL')}.
-            </p>
-            <p>
-              <strong>עדיין נדרשת בדיקת הפצה לרכיבים המפורטים להלן. הדוח אינו אישור משפטי או הבטחה שאין בעיה.</strong>
-            </p>
-            <ul>
-              {data.issues.map((issue) => (
-                <li key={issue.id}>{issue.text}</li>
-              ))}
-            </ul>
-          </>
-        )}
       </section>
       <section>
         <h2>רכיבי צד שלישי</h2>
@@ -159,12 +118,12 @@ export default function License() {
             </p>
             <p>
               {p.review === 'vendor-terms'
-                ? 'כפוף לתנאי ספק נפרדים; אין בדוח אישור להפצה מחדש.'
+                ? 'כפוף לתנאי השימוש של הספק.'
                 : p.review === 'conditions-required'
-                  ? 'נדרשת עמידה בתנאי הרישיון, לרבות חובות מקור או ייחוס כאשר הן חלות.'
+                  ? 'חלים תנאי הרישיון של הרכיב.'
                   : p.review === 'not-applicable'
                     ? 'חבילת תלות וירטואלית ריקה; רישיונות החבילות הממשיות מפורטים בנפרד.'
-                    : 'יש לשמור את הודעות הרישוי החלות על הרכיב.'}
+                    : 'הודעות הרישוי של הרכיב נשמרות בתוכנה.'}
             </p>
             <ul>
               {p.notices
@@ -177,12 +136,6 @@ export default function License() {
                   </li>
                 ))}
             </ul>
-            {!p.notices.length && (
-              <p>
-                לא נאסף קובץ הודעות נפרד לרשומה הזאת. ראו מטא־נתונים, הודעות מערכת ההפעלה או תנאי הספק; אין לראות בחסר
-                הרשאה להפצה.
-              </p>
-            )}
           </details>
         ))}
       </section>

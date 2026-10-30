@@ -6,6 +6,8 @@ import automaticQualityPostScript from '../lib/automaticQualityPostScript.json';
 import automaticWorkflow from '../lib/automaticWorkflow.json';
 import automaticQualityWorkflow from '../lib/automaticQualityWorkflow.json';
 import automaticCombinedWorkflow from '../lib/automaticCombinedWorkflow.json';
+import automaticSecurityRanker from '../lib/automaticSecurityRanker.json';
+import automaticQualityRanker from '../lib/automaticQualityRanker.json';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, ApiError } from '../api/client.js';
@@ -70,8 +72,8 @@ export function scanLaunchChoiceRequired(error) {
   );
 }
 
-// Automatic scan kinds. Each has its own preset workflow, scope text, ranker
-// guidance and agent skills; "scan_kind" also tells the engine which local tools to run.
+// Automatic scan kinds. Each has its own preset workflow, scope text, saved
+// severity rankers (shown on the rankers page) and agent skills; "scan_kind" also tells the engine which local tools to run.
 export const AUTOMATIC_SCAN_KINDS = {
   security: {
     label: 'אבטחה',
@@ -79,8 +81,7 @@ export const AUTOMATIC_SCAN_KINDS = {
     workflow: automaticWorkflow,
     postScript: automaticPostScript,
     scope: 'Review all applicable security areas of the repository; report evidence and limitations in Hebrew.',
-    ranker:
-      'Rank findings by realistic impact and confirmed prerequisites. Explain severity and remediation in Hebrew.',
+    rankers: [automaticSecurityRanker],
     skill: (slug) => !slug.startsWith('he-quality-'),
   },
   quality: {
@@ -90,8 +91,7 @@ export const AUTOMATIC_SCAN_KINDS = {
     postScript: automaticQualityPostScript,
     scope:
       'Review code quality of the repository: correctness, error handling, performance, maintainability and test gaps; report evidence in Hebrew.',
-    ranker:
-      'These are CODE QUALITY findings, not security vulnerabilities. Rank by impact on correctness, stability, data integrity and maintenance cost. Set reward estimates to 0. Explain priority and the fix in Hebrew.',
+    rankers: [automaticQualityRanker],
     skill: (slug) => slug.startsWith('he-quality-') || slug === 'he-verify-coverage',
   },
   both: {
@@ -101,8 +101,7 @@ export const AUTOMATIC_SCAN_KINDS = {
     postScript: automaticPostScript,
     scope:
       'Review all applicable security areas and the main code-quality risks of the repository; report evidence and limitations in Hebrew.',
-    ranker:
-      'Rank security vulnerabilities by realistic impact. Rank code-quality findings (vulnerability_type starting with "תקינות קוד") by impact on correctness and stability, with reward estimates of 0. Explain in Hebrew.',
+    rankers: [automaticSecurityRanker, automaticQualityRanker],
     skill: () => true,
   },
 };
@@ -110,6 +109,9 @@ export const AUTOMATIC_SCAN_KINDS = {
 // React StrictMode runs effects twice in development, so two page loads can try
 // to create the same preset at once. Concurrent requests share one creation.
 const presetCreations = new Map();
+const automaticRankerIds = (rankers, kind) =>
+  AUTOMATIC_SCAN_KINDS[kind].rankers.map((r) => rankers.find((x) => x.name === r.name)?.id).filter(Boolean);
+
 function createPresetOnce(key, create) {
   if (!presetCreations.has(key)) {
     presetCreations.set(
@@ -286,7 +288,15 @@ export default function CreateScan() {
         }
         return result;
       }),
-      api.severityRankers(),
+      api.severityRankers().then(async (items) => {
+        if (!autoMode) return items;
+        const result = [...items];
+        for (const ranker of [automaticSecurityRanker, automaticQualityRanker]) {
+          if (!result.some((r) => r.name === ranker.name))
+            result.push(await createPresetOnce('ranker:' + ranker.name, () => api.createSeverityRanker(ranker)));
+        }
+        return result;
+      }),
       api.localRepos(),
       api.modelProviders(),
       api.modelCatalog().then(
@@ -362,8 +372,7 @@ export default function CreateScan() {
                       )
                       .map((s) => s.id),
                     repo_scope: AUTOMATIC_SCAN_KINDS[scanKind].scope,
-                    rankerExtra: AUTOMATIC_SCAN_KINDS[scanKind].ranker,
-                    rankerIds: [],
+                    rankerExtra: '',
                   }
                 : {}),
               postScriptId:
@@ -376,7 +385,9 @@ export default function CreateScan() {
                 : postScripts.slice(0, 1)
               ).map((p) => p.id),
               ...modelConfiguration,
-              rankerIds: autoMode ? [] : defaultRankerIds(severityRankers, f.rankerIds),
+              rankerIds: autoMode
+                ? automaticRankerIds(severityRankers, scanKind)
+                : defaultRankerIds(severityRankers, f.rankerIds),
             };
           });
           if (sourceScan) setDirty(true);
@@ -685,7 +696,8 @@ export default function CreateScan() {
       postScriptId: refData.postScripts.find((p) => p.name === option.postScript.name)?.id || f.postScriptId,
       postScriptIds: refData.postScripts.filter((p) => p.name === option.postScript.name).map((p) => p.id),
       repo_scope: option.scope,
-      rankerExtra: option.ranker,
+      rankerExtra: '',
+      rankerIds: automaticRankerIds(refData.severityRankers, kind),
       agentSkillIds: refData.agentSkills
         .filter((s) => automaticSkills.some((a) => a.slug === s.slug) && option.skill(s.slug))
         .map((s) => s.id),

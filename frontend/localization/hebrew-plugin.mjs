@@ -58,6 +58,8 @@ export function translateSource(source, dictionary) {
           ['ObjectProperty', 'CallExpression', 'BinaryExpression'].includes(n.type)
         );
       const isDisplayDefault = parent?.type === 'AssignmentPattern' && displayKeys.has(parent.left.name);
+      // const fooLabel = a ? 'Text' : 'Other' — variables named *Label hold display text only.
+      const isLabelVariable = owner?.type === 'VariableDeclarator' && /Label$/.test(owner.id?.name || '');
       // These objects contain labels only; their keys are internal IDs and stay unchanged.
       const inLabels =
         property &&
@@ -70,6 +72,7 @@ export function translateSource(source, dictionary) {
           isDisplayAttr ||
           isRenderedExpression ||
           isDisplayDefault ||
+          isLabelVariable ||
           inLabels)
       ) {
         const leading = node.value.startsWith(' ') && !node.value.includes('\n') ? ' ' : '';

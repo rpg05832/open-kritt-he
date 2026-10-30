@@ -10,7 +10,6 @@ export default function Maintenance() {
   const [diagnostics, setDiagnostics] = useState(null);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
-  const [repository, setRepository] = useState(null);
   const [release, setRelease] = useState(null);
   const [confirmation, setConfirmation] = useState(null);
   const working = busy || data?.jobs?.some((job) => ['queued', 'running'].includes(job.status));
@@ -200,46 +199,18 @@ export default function Maintenance() {
       </section>
       <section>
         <h2>
-          עדכונים מ־GitHub{' '}
+          עדכוני תוכנה{' '}
           <HelpTip
             term="עדכון תוכנה"
-            description="העדכון דורש מאגר הפצה של הגרסה העברית ושני קבצים ב־GitHub Release: חבילת ZIP וקובץ אימות. הקוד המקורי של Open-Kritt אינו כולל את ההתאמות המקומיות. ההתקנה מאמתת את הקובץ ומגבה קוד ונתונים לפני השינוי."
+            description="התוכנה בודקת אם יצאה גרסה חדשה. לפני ההתקנה העדכון מאומת, ונוצר גיבוי של הקוד ושל הנתונים."
           />
         </h2>
-        <p>מאגר ההפצה העברית, בצורה owner/repository:</p>
-        <input
-          aria-label="מאגר עדכונים"
-          dir="ltr"
-          value={repository ?? data?.repository ?? ''}
-          onChange={(e) => setRepository(e.target.value)}
-          placeholder="owner/repository"
-        />{' '}
-        <button
-          disabled={working || !data}
-          onClick={() =>
-            perform(async () => {
-              await maintenance('/source', {
-                method: 'POST',
-                body: JSON.stringify({ repository: repository ?? data.repository }),
-              });
-              setRelease(null);
-            })
-          }
-        >
-          שמירת מקור העדכונים
-        </button>{' '}
         <button
           disabled={working || !data}
           onClick={() => perform(async () => setRelease(await maintenance('/release')))}
         >
           בדיקת עדכון
         </button>
-        {!data?.repository && (
-          <p>
-            עדיין לא הוגדר מאגר הפצה עברית. לאחר פרסום הפרויקט שלכם ב־GitHub, הזינו אותו כאן. לא יותקן קוד מהמאגר המקורי
-            במקום ההתאמות.
-          </p>
-        )}
         {release && (
           <p>
             {release.status === 'not_configured' ? (
@@ -262,7 +233,7 @@ export default function Maintenance() {
             onClick={() =>
               setConfirmation({
                 operation: 'Install',
-                text: 'העדכון יורד ממאגר ההפצה ששמרתם, יאומת ויגובה לפני התקנה. שירותי התוכנה ייעצרו זמנית והבנייה עשויה להימשך מספר דקות. התקינו רק ממאגר שאתם סומכים על בעליו.',
+                text: 'העדכון יורד, מאומת ומגובה לפני ההתקנה. שירותי התוכנה ייעצרו זמנית לכמה דקות.',
               })
             }
           >
@@ -282,16 +253,6 @@ export default function Maintenance() {
             חזרה לגרסה שלפני העדכון
           </button>
         )}
-        <details>
-          <summary>הכנת חבילת הפצה למפרסם הפרויקט</summary>
-          <p>
-            החבילה כוללת קוד מורשה לעדכון בלבד, ללא קובצי חשבונות, פרויקטים, מסד הנתונים או ‎.env. יש לפרסם את ה־ZIP
-            וקובץ האימות יחד באותו Release. זו חבילת עדכון להתקנה קיימת.
-          </p>
-          <button disabled={working || !data} onClick={() => action('Package')}>
-            יצירת חבילת עדכון
-          </button>
-        </details>
       </section>
       <section>
         <h2>התקדמות פעולות התחזוקה</h2>

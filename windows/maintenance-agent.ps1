@@ -83,7 +83,7 @@ function Source-Allowed([string]$name){
  if($name -match '\\|(^|/)\.\.?(/|$)|:' -or $name.StartsWith('/')){return $false}
  # Same allow-list as legal/build-update-package.cjs (keep in sync).
  if($name -match '(^|/)(node_modules|\.git|\.data|local_repos|local-certs|local-tools|vendor-cache|\.env)(/|$)' -or $name -match '\.env'){return $false}
- if($name -match '^app/(LICENSE$|NOTICE\.md$|OWNERSHIP\.md$|THIRD_PARTY_NOTICES\.md$|images\.json$|legal/|windows/|frontend/public/legal/)'){return $true}
+ if($name -match '^app/(LICENSE$|NOTICE\.md$|OWNERSHIP\.md$|THIRD_PARTY_NOTICES\.md$|images\.json$|update-source\.json$|legal/|windows/|frontend/public/legal/)'){return $true}
  return $name -match '^app/(frontend/(src/|localization/|package(-lock)?\.json$|vite\.config\.js$|index\.html$|Dockerfile$)|backend/(src/|prisma/|package(-lock)?\.json$|Dockerfile$|runtime-env\.sh$)|engine/(open_kritt_engine/|requirements\.txt$|Dockerfile$|security-tools\.json$|install_security_tools\.py$|runtime-env\.sh$)|executor-view/(src/|package(-lock)?\.json$|Dockerfile$|runtime-env\.sh$)|database/(init/|Dockerfile$)|docker-compose\.yml$)'
 }
 function Source-Files {
@@ -123,12 +123,15 @@ function Validate-Zip([string]$file){
  return $names.ToArray()
 }
 function Get-Source {
- $file=Join-Path $Store 'update-source.json'
- if(Test-Path -LiteralPath $file){return (Json-Read $file).repository}; return ''
+ # A saved choice wins; otherwise the repository built into the release (app/update-source.json).
+ foreach($file in @((Join-Path $Store 'update-source.json'),(Join-Path $App 'update-source.json'))){
+  if(Test-Path -LiteralPath $file){$value=[string](Json-Read $file).repository; if($value -match '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'){return $value}}
+ }
+ return ''
 }
 function Check-Release {
  $repository=Get-Source
- if(-not $repository){return @{status='not_configured'; message='עדיין לא הוגדר מאגר GitHub להפצה העברית. הקוד המקורי אינו מקור עדכון מתאים להתאמות האלה.'}}
+ if(-not $repository){return @{status='not_configured'; message='בגרסה הזאת עדיין אין מקור עדכונים. הוא יתווסף בגרסה הבאה.'}}
  $release=Invoke-RestMethod -Uri ('https://api.github.com/repos/'+$repository+'/releases/latest') -Headers @{'User-Agent'='Open-Kritt-Hebrew'} -TimeoutSec 15
  $zip=@($release.assets|Where-Object name -eq 'open-kritt-hebrew-update.zip')
  $manifest=@($release.assets|Where-Object name -eq 'open-kritt-hebrew-update.json')

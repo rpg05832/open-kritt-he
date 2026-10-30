@@ -12,7 +12,7 @@ fs.mkdirSync(output, { recursive: true });
 // Same allow-list as Source-Allowed in windows/maintenance-agent.ps1 (keep in sync).
 const forbidden = /(^|\/)(node_modules|\.git|\.data|local_repos|local-certs|local-tools|vendor-cache|\.env)(\/|$)|\.env/;
 const allowed = [
-  /^app\/(LICENSE$|NOTICE\.md$|OWNERSHIP\.md$|THIRD_PARTY_NOTICES\.md$|images\.json$|legal\/|windows\/|frontend\/public\/legal\/)/,
+  /^app\/(LICENSE$|NOTICE\.md$|OWNERSHIP\.md$|THIRD_PARTY_NOTICES\.md$|images\.json$|update-source\.json$|legal\/|windows\/|frontend\/public\/legal\/)/,
   /^app\/(frontend\/(src\/|localization\/|package(-lock)?\.json$|vite\.config\.js$|index\.html$|Dockerfile$)|backend\/(src\/|prisma\/|package(-lock)?\.json$|Dockerfile$|runtime-env\.sh$)|engine\/(open_kritt_engine\/|requirements\.txt$|Dockerfile$|security-tools\.json$|install_security_tools\.py$|runtime-env\.sh$)|executor-view\/(src\/|package(-lock)?\.json$|Dockerfile$|runtime-env\.sh$)|database\/(init\/|Dockerfile$)|docker-compose\.yml$)/,
 ];
 const files = [];

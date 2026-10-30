@@ -17,6 +17,12 @@ describe('Hebrew presentation translation', () => {
     const source = `const userData = 'Scans'; const code = <code>Scans</code>;`;
     expect(translateSource(source, dictionary)).toBe(source);
   });
+  it('translates text kept in *Label variables but not in other variables', () => {
+    expect(translateSource("const blockedLabel = ok ? 'Scans' : 'Delete';", dictionary)).toBe(
+      'const blockedLabel = ok ? "בדיקות" : "מחיקה";'
+    );
+    expect(translateSource("const route = 'Scans';", dictionary)).toBe("const route = 'Scans';");
+  });
   it('decodes JSX entities before matching and emits safe string expressions', () => {
     expect(translateSource('<p>Hello &amp; goodbye</p>', dictionary)).toBe('<p>{"שלום ולהתראות"}</p>');
   });
