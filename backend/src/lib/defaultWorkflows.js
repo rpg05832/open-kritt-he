@@ -8,11 +8,16 @@ export const DEFAULT_WORKFLOWS = JSON.parse(
 
 export const DEFAULT_WORKFLOW_NAMES = DEFAULT_WORKFLOWS.map((workflow) => workflow.name);
 
+// The Hebrew edition sets OPEN_KRITT_UPSTREAM_EXAMPLES=0: the upstream examples are
+// then neither created nor protected, so users can delete them.
+export const upstreamExamplesEnabled = () => process.env.OPEN_KRITT_UPSTREAM_EXAMPLES !== '0';
+
 export function isDefaultWorkflowName(name) {
-  return DEFAULT_WORKFLOW_NAMES.includes(name);
+  return upstreamExamplesEnabled() && DEFAULT_WORKFLOW_NAMES.includes(name);
 }
 
 export async function ensureDefaultWorkflows(client = prisma) {
+  if (!upstreamExamplesEnabled()) return [];
   return client.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('open-kritt-default-workflows'))`;
 

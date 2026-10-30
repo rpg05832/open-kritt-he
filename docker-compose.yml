@@ -33,6 +33,8 @@ services:
       # independently restricted by BACKEND_BIND_ADDRESS above.
       BACKEND_HOST: 0.0.0.0
       BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-}
+      # Hebrew edition: no upstream example workflows/rankers (blockchain, English).
+      OPEN_KRITT_UPSTREAM_EXAMPLES: ${OPEN_KRITT_UPSTREAM_EXAMPLES:-0}
       DATABASE_URL: ${DATABASE_URL:-postgresql://open_kritt:open_kritt_password@db:5432/open_kritt?schema=public}
       # Raw environment keys stay in the engine. The backend receives non-secret
       # presence flags and manages the shared login/key stores used by Accounts.

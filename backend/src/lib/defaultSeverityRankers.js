@@ -1,4 +1,5 @@
 import { prisma } from '../db.js';
+import { upstreamExamplesEnabled } from './defaultWorkflows.js';
 
 export const DEFAULT_SEVERITY_RANKERS = [
   {
@@ -19,10 +20,11 @@ Prefer end-to-end evidence, reachable default or supplied configuration, and rep
 export const DEFAULT_SEVERITY_RANKER_NAMES = DEFAULT_SEVERITY_RANKERS.map((ranker) => ranker.name);
 
 export function isDefaultSeverityRankerName(name) {
-  return DEFAULT_SEVERITY_RANKER_NAMES.includes(name);
+  return upstreamExamplesEnabled() && DEFAULT_SEVERITY_RANKER_NAMES.includes(name);
 }
 
 export async function ensureDefaultSeverityRankers(client = prisma) {
+  if (!upstreamExamplesEnabled()) return [];
   return client.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('open-kritt-default-severity-rankers'))`;
 
