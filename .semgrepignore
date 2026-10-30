@@ -1,0 +1,3 @@
+# Empty on purpose: overrides semgrep built-in defaults (which skip tests/),
+# so tests/rule_fixtures is scanned by test_security_rules in a git checkout.
+# The production scanner builds its own ignore list for the user repository.
