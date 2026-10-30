@@ -302,7 +302,7 @@ function NewScanDialog({ onClose }) {
                         modelOverrideCount
                           ? `${modelOverrideCount} depth override${modelOverrideCount === 1 ? '' : 's'}`
                           : null,
-                        scan.repoKind === 'local' ? 'local snapshot' : null,
+                        scan.repoKind === 'url' ? 'live site' : scan.repoKind === 'local' ? 'local snapshot' : null,
                         scan.age ? `${scan.age} ago` : null,
                       ]
                         .filter(Boolean)
@@ -488,7 +488,8 @@ export function ScanCard({ scan, to, onResume, onToggleError, onDelete, busy, er
         {scan.workflowName} · {scan.model}
         {modelOverrideCount
           ? ` · ${modelOverrideCount} depth override${modelOverrideCount === 1 ? '' : 's'}`
-          : ''} · {scan.repoKind === 'local' ? 'local snapshot' : scan.commitShort}
+          : ''} ·{' '}
+        {scan.repoKind === 'url' ? 'live site' : scan.repoKind === 'local' ? 'local snapshot' : scan.commitShort}
       </div>
 
       {providerAutoscale && (

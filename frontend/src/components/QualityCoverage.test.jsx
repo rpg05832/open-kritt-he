@@ -27,12 +27,19 @@ describe('code quality coverage', () => {
 });
 
 describe('automatic scan kinds', () => {
-  it('uses three distinct two-level workflows with the shared finding fields', () => {
+  it('uses distinct two-level workflows with the shared finding fields', () => {
     const names = Object.values(AUTOMATIC_SCAN_KINDS).map((kind) => kind.workflow.name);
-    expect(new Set(names).size).toBe(3);
+    expect(new Set(names).size).toBe(Object.keys(AUTOMATIC_SCAN_KINDS).length);
     for (const { workflow } of Object.values(AUTOMATIC_SCAN_KINDS)) {
       expect(workflow.levels.map((level) => level.depth)).toEqual([0, 1]);
       expect(Object.keys(workflow.levels[1].outputFormat)).toContain('vulnerability_type');
+    }
+  });
+
+  it('targets a live website only for the website scan kind', () => {
+    expect(AUTOMATIC_SCAN_KINDS.website.website).toBe(true);
+    for (const [name, kind] of Object.entries(AUTOMATIC_SCAN_KINDS)) {
+      if (name !== 'website') expect(kind.website).toBeUndefined();
     }
   });
 

@@ -517,7 +517,12 @@ export default function ScanDetail() {
               {Object.keys(scan.modelOverrides || {}).length
                 ? ` · ${Object.keys(scan.modelOverrides).length} depth overrides`
                 : ''}{' '}
-              · {scan.repoKind === 'local' ? 'local snapshot' : `@${scan.commitShort}`}
+              ·{' '}
+              {scan.repoKind === 'url'
+                ? 'live site'
+                : scan.repoKind === 'local'
+                  ? 'local snapshot'
+                  : `@${scan.commitShort}`}
             </div>
           </div>
           <div className="scan-detail-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -665,8 +670,8 @@ export default function ScanDetail() {
           <ScanStat label="Post-scripts" value={postScripts.length} />
           <ScanStat label="Agent skills" value={scan.agentSkillCount || 0} />
           <ScanStat
-            label={scan.repoKind === 'local' ? 'Revision' : 'Commit'}
-            value={scan.repoKind === 'local' ? 'local snapshot' : scan.commitShort}
+            label={scan.repoKind === 'url' ? 'Target' : scan.repoKind === 'local' ? 'Revision' : 'Commit'}
+            value={scan.repoKind === 'url' ? 'live site' : scan.repoKind === 'local' ? 'local snapshot' : scan.commitShort}
           />
         </div>
 

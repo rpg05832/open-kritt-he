@@ -6,6 +6,7 @@ import automaticQualityPostScript from '../lib/automaticQualityPostScript.json';
 import automaticWorkflow from '../lib/automaticWorkflow.json';
 import automaticQualityWorkflow from '../lib/automaticQualityWorkflow.json';
 import automaticCombinedWorkflow from '../lib/automaticCombinedWorkflow.json';
+import automaticWebsiteWorkflow from '../lib/automaticWebsiteWorkflow.json';
 import automaticSecurityRanker from '../lib/automaticSecurityRanker.json';
 import automaticQualityRanker from '../lib/automaticQualityRanker.json';
 import { useEffect, useMemo, useState } from 'react';
@@ -104,6 +105,16 @@ export const AUTOMATIC_SCAN_KINDS = {
     rankers: [automaticSecurityRanker, automaticQualityRanker],
     skill: () => true,
   },
+  website: {
+    label: 'אתר אינטרנט',
+    help: 'בדיקת אבטחה לאתר חי (כתובת), לא לקוד. רק לאתר שלך או באישור בכתב.',
+    website: true,
+    workflow: automaticWebsiteWorkflow,
+    postScript: automaticPostScript,
+    scope: 'Security-test the live website; report evidence, the triggering request and limitations in Hebrew.',
+    rankers: [automaticSecurityRanker],
+    skill: (slug) => !slug.startsWith('he-quality-'),
+  },
 };
 
 // React StrictMode runs effects twice in development, so two page loads can try
@@ -173,6 +184,11 @@ export default function CreateScan() {
     jobLimit: '',
     scanMode: 'full',
     dependencyAudit: true,
+    // Website (DAST) target, used when scanKind === 'website'.
+    siteUrl: '',
+    websiteMode: 'passive',
+    websiteAuthorized: false,
+    websiteAllowLocal: false,
   });
   const [saving, setSaving] = useState(false);
   const [pendingScan, setPendingScan] = useState(null);
@@ -350,17 +366,20 @@ export default function CreateScan() {
               workflowId: autoMode
                 ? workflows.find((w) => w.name === AUTOMATIC_SCAN_KINDS[scanKind].workflow.name)?.id || ''
                 : defaultWorkflowId(workflows, params.get('workflow') || ''),
+              ...(autoMode && AUTOMATIC_SCAN_KINDS[scanKind].website ? { repoKind: 'url' } : {}),
               ...(autoMode
                 ? {
                     configuration: JSON.stringify(
-                      {
-                        max_files: 4000,
-                        include_tests: true,
-                        repeat_runs: 1,
-                        security_preflight: true,
-                        dependency_audit: true,
-                        automatic_review_version: 2,
-                      },
+                      AUTOMATIC_SCAN_KINDS[scanKind].website
+                        ? { security_preflight: true, automatic_review_version: 2 }
+                        : {
+                            max_files: 4000,
+                            include_tests: true,
+                            repeat_runs: 1,
+                            security_preflight: true,
+                            dependency_audit: true,
+                            automatic_review_version: 2,
+                          },
                       null,
                       2
                     ),
@@ -554,8 +573,21 @@ export default function CreateScan() {
     }));
   };
 
+  const isWebsite = autoMode && scanKind === 'website';
   const repoUrlValid = isValidRemoteRepo(form.repoUrl.trim());
-  const targetValid = form.repoKind === 'remote' ? repoUrlValid : !!form.repoLocal;
+  const siteUrlValid = (() => {
+    try {
+      const u = new URL(form.siteUrl.trim());
+      return ['http:', 'https:'].includes(u.protocol) && !!u.hostname && !u.username && !u.password;
+    } catch {
+      return false;
+    }
+  })();
+  const targetValid = isWebsite
+    ? siteUrlValid && form.websiteAuthorized
+    : form.repoKind === 'remote'
+      ? repoUrlValid
+      : !!form.repoLocal;
 
   const dependencyEmpty = (dep) => {
     if ((dep.kind || 'remote') === 'local') return !dep.repo_full;
@@ -651,18 +683,32 @@ export default function CreateScan() {
         post_script_ids: selectedPostScriptIds,
         agent_skill_ids: form.agentSkillIds,
         scan_mode: form.scanMode || 'full',
-        dependency_audit: form.dependencyAudit !== false,
+        dependency_audit: !isWebsite && form.dependencyAudit !== false,
         security_preflight: true,
         ...(autoMode ? { scan_kind: scanKind } : {}),
+        // Website scans carry the mode and the required authorization.
+        ...(isWebsite
+          ? {
+              website: {
+                mode: form.websiteMode,
+                authorized: form.websiteAuthorized === true,
+                allow_local: form.websiteAllowLocal === true,
+              },
+            }
+          : {}),
       };
     }
     const payload = {
       workflowId: form.workflowId,
       postScriptId: selectedPostScriptIds[0],
       agentSkillIds: form.agentSkillIds,
-      repo_kind: form.repoKind,
-      repo_full: form.repoKind === 'remote' ? normalizeGithubRepo(form.repoUrl) : form.repoLocal,
-      commit_sha: form.repoKind === 'remote' ? form.commit_sha.trim() || 'HEAD' : undefined,
+      repo_kind: isWebsite ? 'url' : form.repoKind,
+      repo_full: isWebsite
+        ? form.siteUrl.trim()
+        : form.repoKind === 'remote'
+          ? normalizeGithubRepo(form.repoUrl)
+          : form.repoLocal,
+      commit_sha: !isWebsite && form.repoKind === 'remote' ? form.commit_sha.trim() || 'HEAD' : undefined,
       repo_scope: form.repo_scope,
       dependencies: normalizedDependencies(),
       configuration,
@@ -696,6 +742,8 @@ export default function CreateScan() {
       postScriptId: refData.postScripts.find((p) => p.name === option.postScript.name)?.id || f.postScriptId,
       postScriptIds: refData.postScripts.filter((p) => p.name === option.postScript.name).map((p) => p.id),
       repo_scope: option.scope,
+      // A website scan targets a live address, not a code repository.
+      repoKind: option.website ? 'url' : f.repoKind === 'url' ? 'remote' : f.repoKind,
       rankerExtra: '',
       rankerIds: automaticRankerIds(refData.severityRankers, kind),
       agentSkillIds: refData.agentSkills
@@ -720,9 +768,13 @@ export default function CreateScan() {
         : selectedPostScriptIds.length === 0
           ? 'Select a post-script'
           : !targetValid
-            ? form.repoKind === 'remote'
-              ? 'Enter a valid repo'
-              : 'Select a local repository'
+            ? isWebsite
+              ? !siteUrlValid
+                ? 'Enter a full website address'
+                : 'Confirm you are authorized to scan this site'
+              : form.repoKind === 'remote'
+                ? 'Enter a valid repo'
+                : 'Select a local repository'
             : !dependenciesValid
               ? 'Fix dependency rows'
               : !jobLimitValid
@@ -909,6 +961,10 @@ export default function CreateScan() {
           </details>
           {/* ===================== TARGET ===================== */}
           <Label>2 · TARGET</Label>
+          {isWebsite ? (
+            <WebsiteTarget form={form} set={set} siteUrlValid={siteUrlValid} />
+          ) : (
+          <>
           <Pills
             value={form.repoKind}
             onChange={(k) => set({ repoKind: k })}
@@ -1008,6 +1064,8 @@ export default function CreateScan() {
                 a new scan to capture later changes.
               </div>
             </div>
+          )}
+          </>
           )}
 
           <div style={{ marginBottom: 28 }}>
@@ -1997,6 +2055,108 @@ function Input({ mono, small, style, ...props }) {
     />
   );
 }
+const WEBSITE_MODES = [
+  { value: 'passive', title: 'זהירה', help: 'גלישה וקריאה בלבד, בלי ניסיונות תקיפה. אינה משנה דבר באתר.' },
+  { value: 'active', title: 'פעילה', help: 'תקיפות מבוקרות כדי להוכיח פרצה. עלולה להוסיף רשומות או לשלוח טפסים.' },
+  {
+    value: 'full',
+    title: 'תקיפה מלאה',
+    help: 'כל סוגי הבדיקות בעוצמה מרבית, כמו תוקף אמיתי. רק לאתר בסביבת בדיקה — עלולה להעמיס ולמלא נתוני בדיקה.',
+  },
+];
+
+// Website (DAST) target: the address, the required authorization, and the mode.
+function WebsiteTarget({ form, set, siteUrlValid }) {
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <Field label="כתובת האתר">
+        <Input
+          value={form.siteUrl}
+          onChange={(e) => set({ siteUrl: e.target.value })}
+          placeholder="https://example.com"
+          mono
+          dir="ltr"
+          style={{ borderColor: form.siteUrl && !siteUrlValid ? 'var(--fail)' : 'var(--border)' }}
+        />
+        {form.siteUrl && !siteUrlValid && <FieldError>יש להזין כתובת מלאה שמתחילה ב־http:// או https://.</FieldError>}
+      </Field>
+
+      <label
+        style={{
+          display: 'flex',
+          gap: 9,
+          alignItems: 'flex-start',
+          margin: '14px 0',
+          padding: '11px 13px',
+          border: '1px solid var(--border)',
+          borderRadius: 9,
+          background: 'var(--surface-2)',
+          cursor: 'pointer',
+          fontSize: 13,
+          lineHeight: 1.5,
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={form.websiteAuthorized}
+          onChange={(e) => set({ websiteAuthorized: e.target.checked })}
+          style={{ marginTop: 3, flex: 'none' }}
+        />
+        <span>
+          <strong>האתר שלי, או שיש לי אישור בכתב לבדוק אותו.</strong>
+          <br />
+          סריקת אתר של מישהו אחר בלי רשות אסורה על פי חוק. האחריות עליכם.
+        </span>
+      </label>
+
+      <fieldset className="scan-kind" style={{ marginTop: 6 }}>
+        <legend>עומק הבדיקה</legend>
+        {WEBSITE_MODES.map((m) => (
+          <label key={m.value} className={form.websiteMode === m.value ? 'selected' : undefined}>
+            <input
+              type="radio"
+              name="website-mode"
+              value={m.value}
+              checked={form.websiteMode === m.value}
+              onChange={() => set({ websiteMode: m.value })}
+            />
+            <strong>{m.title}</strong>
+            <span>{m.help}</span>
+          </label>
+        ))}
+      </fieldset>
+
+      {form.websiteMode !== 'passive' && (
+        <p style={{ fontSize: 12.5, color: 'var(--warn, #9a6700)', lineHeight: 1.5, marginTop: 10 }}>
+          ⚠ מצב זה שולח ניסיונות תקיפה אמיתיים לאתר. הריצו אותו רק על אתר שלכם, ורצוי בסביבת בדיקה ולא על אתר ייצור חי.
+        </p>
+      )}
+
+      <label
+        style={{
+          display: 'flex',
+          gap: 8,
+          alignItems: 'flex-start',
+          marginTop: 12,
+          fontSize: 12,
+          color: 'var(--text-2)',
+          lineHeight: 1.5,
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={form.websiteAllowLocal}
+          onChange={(e) => set({ websiteAllowLocal: e.target.checked })}
+          style={{ marginTop: 3, flex: 'none' }}
+        />
+        <span>
+          האתר רץ על המחשב שלי או ברשת המקומית (למשל אתר בפיתוח). רכיבי התוכנה עצמם נשארים חסומים תמיד.
+        </span>
+      </label>
+    </div>
+  );
+}
+
 function Pills({ value, onChange, options, small, noMargin }) {
   return (
     <div
