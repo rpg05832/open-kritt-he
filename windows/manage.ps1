@@ -13,6 +13,7 @@ function Run-Docker([string[]]$Arguments,[int]$Timeout=45,[switch]$AllowFailure)
  $p=New-Object Diagnostics.Process; $p.StartInfo.FileName=$call.File; $p.StartInfo.Arguments=$call.CommandLine
  $p.StartInfo.UseShellExecute=$false; $p.StartInfo.CreateNoWindow=$true
  $p.StartInfo.RedirectStandardOutput=$true; $p.StartInfo.RedirectStandardError=$true
+ $p.StartInfo.StandardOutputEncoding=[Text.Encoding]::UTF8; $p.StartInfo.StandardErrorEncoding=[Text.Encoding]::UTF8 # docker and wsl.exe (WSL_UTF8) print UTF-8
  # Compose resolves COMPOSE_FILE (prebuilt-image mode) relative to the working folder.
  $p.StartInfo.WorkingDirectory=$(if(Test-Path -LiteralPath $App){$App}else{$Root})
  [void]$p.Start(); $o=$p.StandardOutput.ReadToEndAsync(); $e=$p.StandardError.ReadToEndAsync(); $timer=[Diagnostics.Stopwatch]::StartNew()
@@ -73,6 +74,8 @@ function Owned-Runners {
 # All installations share the Docker project name and container names, so every
 # action first checks that the running containers belong to THIS folder.
 function Get-CanonicalPath([string]$Path){ if([string]::IsNullOrWhiteSpace($Path)){return ''}
+ # The built-in engine reports folders as /mnt/<drive>/...; compare them as Windows paths.
+ if($Path -match '^/mnt/([a-zA-Z])/(.*)$'){$Path=$Matches[1].ToUpperInvariant()+':\'+($Matches[2] -replace '/','\')}
  $full=[IO.Path]::GetFullPath($Path).TrimEnd('\'); $parts=$full.Split('\'); $current=$parts[0]+'\'
  foreach($part in $parts[1..($parts.Length-1)]){
   $current=Join-Path $current $part

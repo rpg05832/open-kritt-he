@@ -12,9 +12,14 @@ RUNTIME_ROOT="${OPEN_KRITT_RUNTIME_DIR:-/opt/runtime-tools}"
 SYSTEM_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 bundle="$SYSTEM_BUNDLE"
 
+# "[ -w ]" is true for root even on a read-only mount, so try a real write.
+writable() {
+  mkdir -p "$RUNTIME_ROOT/ca" 2>/dev/null && touch "$RUNTIME_ROOT/ca/.write-test" 2>/dev/null \
+    && rm -f "$RUNTIME_ROOT/ca/.write-test"
+}
+
 if ls /run/approved-ca/*.crt >/dev/null 2>&1; then
-  if [ -w "$RUNTIME_ROOT" ]; then
-    mkdir -p "$RUNTIME_ROOT/ca"
+  if writable; then
     out="$RUNTIME_ROOT/ca/bundle.pem"
   else
     out=/tmp/open-kritt-ca-bundle.pem
@@ -22,7 +27,7 @@ if ls /run/approved-ca/*.crt >/dev/null 2>&1; then
   cat "$SYSTEM_BUNDLE" /run/approved-ca/*.crt > "$out.tmp"
   mv "$out.tmp" "$out"
   bundle="$out"
-elif [ -w "$RUNTIME_ROOT" ]; then
+elif writable; then
   # No approved certificate any more (for example the user deleted it): drop the
   # shared bundle so scan runners stop trusting a revoked CA.
   rm -f "$RUNTIME_ROOT/ca/bundle.pem"

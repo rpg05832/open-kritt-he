@@ -114,10 +114,21 @@ function Test-WslEngineRunning([string]$Name=$script:WslDistro){
  return (Invoke-Wsl @('-d',$Name,'-u','root','--exec','docker','info','--format','{{.OSType}}') 30).Out.Trim() -eq 'linux'
 }
 
+function Start-WslKeepAlive([string]$Name=$script:WslDistro){
+ # WSL shuts a distribution down seconds after the last wsl.exe session ends, which
+ # would stop dockerd and the program. One hidden session keeps it running until
+ # Stop-WslEngine (wsl --terminate) ends it.
+ $tag='open-kritt-keepalive'
+ $running=@(Get-CimInstance Win32_Process -Filter "Name='wsl.exe'" -ErrorAction SilentlyContinue | Where-Object {$_.CommandLine -like "*-d $Name *$tag*"})
+ if($running.Count){return}
+ Start-Process -FilePath 'wsl.exe' -ArgumentList ('-d '+$Name+' -u root --exec sh -c "exec sleep 2147483647" '+$tag) -WindowStyle Hidden
+}
+
 function Start-WslEngine([string]$Root='',[string]$Name=$script:WslDistro,[int]$WaitSeconds=60){
  # Certificates first: dockerd reads the trust store once, when it starts, so a
  # newly approved (or removed) certificate restarts the engine.
  if($Root -and (Sync-WslCertificates $Root $Name) -and (Test-WslEngineRunning $Name)){Stop-WslEngine $Name}
+ Start-WslKeepAlive $Name
  [void](Invoke-Wsl @('-d',$Name,'-u','root','--exec','/usr/local/bin/open-kritt-dockerd') 60)
  $until=(Get-Date).AddSeconds($WaitSeconds)
  do{ if(Test-WslEngineRunning $Name){return $true}; Start-Sleep -Seconds 2 }while((Get-Date) -lt $until)

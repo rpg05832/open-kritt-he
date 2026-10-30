@@ -30,6 +30,7 @@ function Run-Docker([string[]]$Arguments,[int]$Timeout=120){
  $p.StartInfo.WorkingDirectory=$(if(Test-Path -LiteralPath $App){$App}else{$Root})
  $p.StartInfo.UseShellExecute=$false; $p.StartInfo.CreateNoWindow=$true
  $p.StartInfo.RedirectStandardOutput=$true; $p.StartInfo.RedirectStandardError=$true
+ $p.StartInfo.StandardOutputEncoding=[Text.Encoding]::UTF8; $p.StartInfo.StandardErrorEncoding=[Text.Encoding]::UTF8 # docker and wsl.exe (WSL_UTF8) print UTF-8
  [void]$p.Start(); $o=$p.StandardOutput.ReadToEndAsync(); $e=$p.StandardError.ReadToEndAsync()
  if(-not $p.WaitForExit($Timeout*1000)){$p.Kill(); throw 'הפעולה חרגה מזמן ההמתנה.'}
  $p.WaitForExit(); if($p.ExitCode -ne 0){$p.Dispose(); throw 'פעולת Docker נכשלה. בדקו שמנוע Docker ושירותי התוכנה פועלים.'}

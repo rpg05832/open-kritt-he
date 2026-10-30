@@ -52,6 +52,7 @@ function Invoke-Pumped {
  $p.StartInfo.Arguments=($Arguments|ForEach-Object{ if($_ -ne '' -and $_ -notmatch '[\s"]'){$_}else{'"'+(($_ -replace '(\\*)"','$1$1\"') -replace '(\\+)$','$1$1')+'"'} }) -join ' '
  $p.StartInfo.UseShellExecute=$false; $p.StartInfo.CreateNoWindow=$true
  $p.StartInfo.RedirectStandardOutput=$true; $p.StartInfo.RedirectStandardError=$true
+ $p.StartInfo.StandardOutputEncoding=[Text.Encoding]::UTF8; $p.StartInfo.StandardErrorEncoding=[Text.Encoding]::UTF8 # docker and wsl.exe (WSL_UTF8) print UTF-8
  try{[void]$p.Start()}catch{return [pscustomobject]@{Code=-1;Out='';Err=$_.Exception.Message;TimedOut=$false}}
  $o=$p.StandardOutput.ReadToEndAsync(); $e=$p.StandardError.ReadToEndAsync(); $timer=[Diagnostics.Stopwatch]::StartNew()
  while(-not $p.WaitForExit(100)){& $Pump; if($timer.Elapsed.TotalSeconds -gt $TimeoutSeconds){try{$p.Kill()}catch{}; $p.Dispose(); return [pscustomobject]@{Code=-1;Out='';Err='timeout';TimedOut=$true}}}
