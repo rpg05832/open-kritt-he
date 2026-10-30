@@ -19,12 +19,12 @@ import { useNewestFirst, usePagination } from '../lib/usePagination.js';
 import Pagination from '../components/Pagination.jsx';
 
 const FILTERS = [
-  ['all', 'All'],
-  ['running', 'Running'],
-  ['queued', 'Queued'],
-  ['rate_limited', 'Rate limited'],
-  ['completed', 'Completed'],
-  ['failed', 'Failed'],
+  { key: 'all', label: 'All' },
+  { key: 'running', label: 'Running' },
+  { key: 'queued', label: 'Queued' },
+  { key: 'rate_limited', label: 'Rate limited' },
+  { key: 'completed', label: 'Completed' },
+  { key: 'failed', label: 'Failed' },
 ];
 const SCANS_PAGE_SIZE = 6;
 
@@ -123,7 +123,7 @@ export default function Scans() {
       </div>
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 18 }}>
-        {FILTERS.map(([k, label]) => (
+        {FILTERS.map(({ key: k, label }) => (
           <span
             key={k}
             onClick={() => {

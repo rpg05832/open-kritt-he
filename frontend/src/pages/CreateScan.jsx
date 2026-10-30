@@ -901,8 +901,8 @@ export default function CreateScan() {
             value={form.repoKind}
             onChange={(k) => set({ repoKind: k })}
             options={[
-              ['remote', 'Remote'],
-              ['local', 'Local'],
+              { value: 'remote', label: 'Remote' },
+              { value: 'local', label: 'Local' },
             ]}
           />
 
@@ -1032,8 +1032,8 @@ export default function CreateScan() {
                       value={dep.kind || 'remote'}
                       onChange={(kind) => updateDep(i, { kind, repo_full: '', commit_sha: '' })}
                       options={[
-                        ['remote', 'Remote'],
-                        ['local', 'Local'],
+                        { value: 'remote', label: 'Remote' },
+                        { value: 'local', label: 'Local' },
                       ]}
                       noMargin
                     />
@@ -1997,7 +1997,7 @@ function Pills({ value, onChange, options, small, noMargin }) {
         marginBottom: noMargin ? 0 : 14,
       }}
     >
-      {options.map(([val, label]) => {
+      {options.map(({ value: val, label }) => {
         const active = value === val;
         return (
           <button
