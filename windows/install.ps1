@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param([switch]$PrepareOnly,[switch]$AcceptLicense,[switch]$IncludeCursor,[switch]$IncludeGrok,[switch]$NoStart,[string]$TargetRoot='')
+param([switch]$PrepareOnly,[switch]$AcceptLicense,[switch]$IncludeCursor,[switch]$IncludeGrok,[switch]$NoStart,[switch]$BuildLocally,[string]$TargetRoot='')
 $ErrorActionPreference='Stop'
 # $PSScriptRoot is empty inside param() defaults in Windows PowerShell 5.1.
 if(-not $TargetRoot){$TargetRoot=$PSScriptRoot}
@@ -63,9 +63,48 @@ $existingVolumes=& $dockerCommand.Source volume ls -q --filter label=com.docker.
 if(($existing -or $existingVolumes) -and -not (Test-Path -LiteralPath (Join-Path $installationRoot '.maintenance/installed-here'))){throw 'כבר קיימת במחשב התקנה או נתונים של התוכנה. השתמשו בתיקיית ההתקנה הקיימת או במסך העדכונים שלה; לא בוצע שינוי בשירותים.'}
 Push-Location -LiteralPath $applicationRoot
 try{
+ # Prebuilt-image mode: images.json (published with each release) pins every
+ # service image by digest. Downloading them replaces the long local build; when
+ # the download fails, the installer falls back to building here.
+ $imagesManifest=Join-Path $installationRoot 'images.json'
+ $installLog=Join-Path $installationRoot 'installation.log'
+ $usedImages=$false
+ if(-not $BuildLocally -and (Test-Path -LiteralPath $imagesManifest)){
+  $release=Get-Content -LiteralPath $imagesManifest -Raw -Encoding UTF8 | ConvertFrom-Json
+  $keys=@{frontend='OPEN_KRITT_FRONTEND_IMAGE';backend='OPEN_KRITT_BACKEND_IMAGE';engine='ENGINE_IMAGE';'executor-view'='OPEN_KRITT_EXECUTOR_VIEW_IMAGE';db='OPEN_KRITT_DB_IMAGE'}
+  $values=@{}
+  foreach($service in $keys.Keys){
+   $reference=[string]$release.images.$service
+   if($reference -notmatch ('^ghcr\.io/[a-z0-9._-]+/open-kritt-he-'+[regex]::Escape($service)+'@sha256:[a-f0-9]{64}$')){throw ('images.json: הפניה לא תקינה לרכיב '+$service)}
+   $values[$keys[$service]]=$reference
+  }
+  $values['ENGINE_SCAN_RUNNER_IMAGE']=$values['ENGINE_IMAGE']
+  $values['COMPOSE_FILE']='docker-compose.yml;docker-compose.override.yml;docker-compose.images.yml'
+  $text=[IO.File]::ReadAllText($environmentFile)
+  foreach($key in $values.Keys){$text=[regex]::Replace($text,('(?m)^'+$key+'=.*\r?\n?'),''); $text=$text.TrimEnd()+[Environment]::NewLine+$key+'='+$values[$key]}
+  [IO.File]::WriteAllText($environmentFile,$text+[Environment]::NewLine,(New-Object Text.UTF8Encoding($false)))
+  $usedImages=$true
+  foreach($service in @('db','backend','engine','frontend','executor-view')){
+   Write-Output ('Downloading '+$service+'...')
+   $previousPreference=$ErrorActionPreference
+   try{
+    $ErrorActionPreference='Continue'
+    & $dockerCommand.Source compose -p openkritt-he pull $service 2>&1 | ForEach-Object { $line=$_.ToString(); Add-Content -LiteralPath $installLog -Value $line -Encoding UTF8; Write-Host $line }
+    $pullExit=$LASTEXITCODE
+   }finally{$ErrorActionPreference=$previousPreference}
+   if($pullExit -ne 0){$usedImages=$false; break}
+  }
+  if(-not $usedImages){
+   # Back to local build: remove the image references so compose builds again.
+   $text=[IO.File]::ReadAllText($environmentFile)
+   foreach($key in $values.Keys){$text=[regex]::Replace($text,('(?m)^'+$key+'=.*\r?\n?'),'')}
+   [IO.File]::WriteAllText($environmentFile,$text,(New-Object Text.UTF8Encoding($false)))
+   Write-Output 'Prebuilt images could not be downloaded; building locally instead.'
+  }
+ }
  foreach($service in @('db','backend','engine','frontend','executor-view')){
+  if($usedImages){break}
   Write-Output ('Building '+$service+'...')
-  $installLog=Join-Path $installationRoot 'installation.log'
   $previousPreference=$ErrorActionPreference
   try{
    $ErrorActionPreference='Continue'
@@ -87,5 +126,5 @@ try{
  }
 }finally{Pop-Location}
 [void][IO.Directory]::CreateDirectory((Join-Path $installationRoot '.maintenance'))
-[IO.File]::WriteAllText((Join-Path $installationRoot '.maintenance/installed-here'),'source-install-v1')
+[IO.File]::WriteAllText((Join-Path $installationRoot '.maintenance/installed-here'),$(if($usedImages){'prebuilt-images-v1'}else{'source-install-v1'}))
 if(-not $NoStart){& (Join-Path $installationRoot 'manage.ps1') -Action Start}

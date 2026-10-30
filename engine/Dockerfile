@@ -19,12 +19,15 @@ WORKDIR /app
 # Copy the Node runtime as a tree so the npm/npx symlinks retain their targets.
 COPY --from=node_runtime /usr/local/ /usr/local/
 
+# INCLUDE_VENDOR_CLIS=0 builds the publishable image: Claude Code is proprietary
+# and is then installed on the user's machine at first start (runtime_tools.py).
+ARG INCLUDE_VENDOR_CLIS=1
 RUN apt-get update \
     && apt-get install -y --no-install-recommends bash ca-certificates curl git util-linux \
     && npm install --global --no-audit --no-fund npm@12.0.1 \
     && npm install --global --no-audit --no-fund @openai/codex@0.145.0 \
     && codex --version \
-    && npm install --global --no-audit --no-fund --allow-scripts=@anthropic-ai/claude-code @anthropic-ai/claude-code@2.1.215 \
+    && if [ "$INCLUDE_VENDOR_CLIS" = "1" ]; then npm install --global --no-audit --no-fund --allow-scripts=@anthropic-ai/claude-code @anthropic-ai/claude-code@2.1.215; fi \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -105,4 +108,9 @@ ENV ENGINE_DATA_DIR=/data \
     CODEX_HOME=/root/.codex \
     PATH="/root/.local/bin:${PATH}"
 
+# Runtime CA bundle from user-approved certificates and tools installed on this
+# machine (see runtime-env.sh); TLS verification stays on.
+COPY runtime-env.sh /usr/local/bin/runtime-env
+RUN sed -i 's/\r$//' /usr/local/bin/runtime-env && chmod 0755 /usr/local/bin/runtime-env
+ENTRYPOINT ["/usr/local/bin/runtime-env"]
 CMD ["python", "-m", "open_kritt_engine"]

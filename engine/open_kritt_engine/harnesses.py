@@ -995,6 +995,10 @@ def _scan_docker_command(
         "SSL_CERT_FILE",
         "SSL_CERT_DIR",
         "NODE_EXTRA_CA_CERTS",
+        "REQUESTS_CA_BUNDLE",
+        "PIP_CERT",
+        "GIT_SSL_CAINFO",
+        "npm_config_cafile",
     ]
 
     docker_cmd = [
@@ -1059,6 +1063,12 @@ def _scan_docker_command(
             "/tmp:rw,nosuid,nodev,size=1g",
         ]
     )
+    # Tools installed on this machine and the CA bundle built from approved
+    # certificates live in the runtime volume (prebuilt images contain neither).
+    runtime_volume = os.getenv("ENGINE_RUNTIME_TOOLS_VOLUME", "").strip()
+    if runtime_volume:
+        runtime_dir = os.getenv("OPEN_KRITT_RUNTIME_DIR", "/opt/runtime-tools")
+        docker_cmd.extend(["--mount", f"type=volume,src={runtime_volume},dst={runtime_dir},readonly"])
     for key, value in container_env.items():
         docker_cmd.extend(["--env", f"{key}={value}"])
     for key in inherited_env:

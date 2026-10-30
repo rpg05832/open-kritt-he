@@ -1945,4 +1945,9 @@ def main():
     except HarnessError as exc:
         LOGGER.error("engine startup configuration error: %s", exc)
         raise SystemExit(2) from exc
+    # Prebuilt images ship without proprietary CLIs; install the pinned versions
+    # into the runtime volume on this machine (no-op when they are baked in).
+    from .runtime_tools import prepare_runtime_tools
+
+    prepare_runtime_tools()
     Worker(EngineConfig.from_env()).run_forever()

@@ -78,9 +78,10 @@ function Wait-Application {
 }
 function Source-Allowed([string]$name){
  if($name -match '\\|(^|/)\.\.?(/|$)|:' -or $name.StartsWith('/')){return $false}
- if($name -match '(^|/)(node_modules|\.git|\.data|local_repos|local-certs|local-tools|\.env)(/|$)' -or $name -match '\.env'){return $false}
- if($name -match '^app/(LICENSE$|NOTICE\.md$|OWNERSHIP\.md$|THIRD_PARTY_NOTICES\.md$|legal/|windows/|frontend/public/legal/)'){return $true}
- return $name -match '^app/(frontend/(src/|localization/|package(-lock)?\.json$|vite\.config\.js$|index\.html$|Dockerfile$)|backend/(src/|prisma/|package(-lock)?\.json$|Dockerfile$)|engine/(open_kritt_engine/|requirements\.txt$|Dockerfile$)|executor-view/(src/|package(-lock)?\.json$|Dockerfile$)|database/(init/|Dockerfile$)|docker-compose\.yml$)'
+ # Same allow-list as legal/build-update-package.cjs (keep in sync).
+ if($name -match '(^|/)(node_modules|\.git|\.data|local_repos|local-certs|local-tools|vendor-cache|\.env)(/|$)' -or $name -match '\.env'){return $false}
+ if($name -match '^app/(LICENSE$|NOTICE\.md$|OWNERSHIP\.md$|THIRD_PARTY_NOTICES\.md$|images\.json$|legal/|windows/|frontend/public/legal/)'){return $true}
+ return $name -match '^app/(frontend/(src/|localization/|package(-lock)?\.json$|vite\.config\.js$|index\.html$|Dockerfile$)|backend/(src/|prisma/|package(-lock)?\.json$|Dockerfile$|runtime-env\.sh$)|engine/(open_kritt_engine/|requirements\.txt$|Dockerfile$|security-tools\.json$|install_security_tools\.py$|runtime-env\.sh$)|executor-view/(src/|package(-lock)?\.json$|Dockerfile$|runtime-env\.sh$)|database/(init/|Dockerfile$)|docker-compose\.yml$)'
 }
 function Source-Files {
  $licenseInventory=Join-Path $App 'frontend/public/legal/inventory.json'
@@ -149,6 +150,34 @@ function Sync-RootScripts {
   $source=Join-Path $App ('windows\'+$name); if(Test-Path -LiteralPath $source){Copy-Item -LiteralPath $source -Destination (Join-Path $Root $name) -Force}
  }
 }
+# ---------- prebuilt-image mode (install.ps1 -FromImages) ----------
+$ImageKeys=@{frontend='OPEN_KRITT_FRONTEND_IMAGE';backend='OPEN_KRITT_BACKEND_IMAGE';engine='ENGINE_IMAGE';'executor-view'='OPEN_KRITT_EXECUTOR_VIEW_IMAGE';db='OPEN_KRITT_DB_IMAGE'}
+function Test-ImagesMode {
+ $path=Join-Path $App '.env'
+ return (Test-Path -LiteralPath $path) -and ([IO.File]::ReadAllText($path) -match '(?m)^COMPOSE_FILE=.*docker-compose\.images\.yml')
+}
+function Get-EnvImages {
+ $values=@{}; $path=Join-Path $App '.env'
+ if(Test-Path -LiteralPath $path){$text=[IO.File]::ReadAllText($path); foreach($key in @($ImageKeys.Values)+'ENGINE_SCAN_RUNNER_IMAGE'){$match=[regex]::Match($text,('(?m)^'+$key+'=(.*)$')); if($match.Success){$values[$key]=$match.Groups[1].Value.Trim()}}}
+ return $values
+}
+function Set-EnvImages($values){
+ if(-not $values -or -not $values.Count){return}
+ $path=Join-Path $App '.env'; $text=[IO.File]::ReadAllText($path)
+ foreach($key in @($values.Keys)){$text=[regex]::Replace($text,('(?m)^'+$key+'=.*\r?\n?'),''); $text=$text.TrimEnd()+[Environment]::NewLine+$key+'='+$values[$key]}
+ [IO.File]::WriteAllText($path,$text+[Environment]::NewLine,(New-Object Text.UTF8Encoding($false)))
+}
+function Apply-ImageReferences([string]$manifestPath){
+ # Only digest-pinned references to this distribution's images are accepted.
+ $release=Json-Read $manifestPath; $values=@{}
+ foreach($service in $ImageKeys.Keys){
+  $reference=[string]$release.images.$service
+  if($reference -notmatch ('^ghcr\.io/[a-z0-9._-]+/open-kritt-he-'+[regex]::Escape($service)+'@sha256:[a-f0-9]{64}$')){throw 'קובץ התמונות של העדכון אינו תקין. העדכון נעצר.'}
+  $values[$ImageKeys[$service]]=$reference
+ }
+ $values['ENGINE_SCAN_RUNNER_IMAGE']=$values['ENGINE_IMAGE']
+ Set-EnvImages $values
+}
 function Set-Job([string]$status,[string]$message,$result=$null){Json-Write (Join-Path $Jobs ($JobId+'.json')) @{id=$JobId; operation=$Operation; status=$status; message=$message; result=$result; updatedAt=(Get-Date).ToUniversalTime().ToString('o')}}
 if($Mode -eq 'Worker'){
  if($JobId -notmatch '^[a-f0-9]{32}$'){throw 'Invalid job'}
@@ -193,21 +222,32 @@ if($Mode -eq 'Worker'){
     $images=@(); foreach($name in @('open-kritt-backend','open-kritt-engine','open-kritt-frontend')){
       $parts=(Run-Docker @('inspect','--format','{{.Config.Image}}|{{.Image}}',$name)).Trim().Split('|'); $images+=@{tag=$parts[0]; id=$parts[1]}
     }
-    $rollback=@{zipName=[IO.Path]::GetFileName($rollbackZip); newFiles=$newFiles; images=$images; databaseBackupId=$backup.id; previousRelease=$null}
+    $rollback=@{zipName=[IO.Path]::GetFileName($rollbackZip); newFiles=$newFiles; images=$images; envImages=(Get-EnvImages); databaseBackupId=$backup.id; previousRelease=$null}
     if(Test-Path -LiteralPath (Join-Path $Store 'installed-release.json')){$rollback.previousRelease=Json-Read (Join-Path $Store 'installed-release.json')}
     Json-Write (Join-Path $Updates 'rollback.json') $rollback
     [void](Compose @('stop','engine','backend','frontend'))
     try{
-      Restore-Source $zip @(); Sync-RootScripts; Set-Job 'running' 'בונה את רכיבי התוכנה. הפעולה עשויה להימשך מספר דקות…'
-      [void](Compose @('build','backend','engine','frontend') 1800)
-      [void](Compose @('up','-d','--no-deps','backend','engine','frontend') 300)
+      Restore-Source $zip @(); Sync-RootScripts
+      if(Test-ImagesMode){
+        # Prebuilt images: download the release's signed, digest-pinned images instead of building.
+        Set-Job 'running' 'מוריד את הרכיבים המוכנים של הגרסה החדשה…'
+        Apply-ImageReferences (Join-Path $App 'images.json')
+        [void](Compose @('pull','db','backend','engine','frontend','executor-view') 1800)
+        [void](Compose @('up','-d','--renew-anon-volumes','backend','engine','frontend','executor-view') 300)
+      }else{
+        Set-Job 'running' 'בונה את רכיבי התוכנה. הפעולה עשויה להימשך מספר דקות…'
+        [void](Compose @('build','backend','engine','frontend') 1800)
+        [void](Compose @('up','-d','--no-deps','backend','engine','frontend') 300)
+      }
       Wait-Application
       Json-Write (Join-Path $Store 'installed-release.json') $release
     }catch{
       [void](Compose @('stop','engine','backend','frontend'))
       Restore-Source $rollbackZip $newFiles
       Restore-Database $backup.id
-      foreach($image in $images){[void](Run-Docker @('tag',$image.id,$image.tag))}
+      # Images mode: the previous digests are still on this computer; point .env back to them.
+      if(Test-ImagesMode){Set-EnvImages $rollback.envImages}
+      else{foreach($image in $images){[void](Run-Docker @('tag',$image.id,$image.tag))}}
       [void](Compose @('up','-d','--no-deps','backend','engine','frontend') 300)
       throw 'העדכון נכשל. הקוד, תמונות ההפעלה ומסד הנתונים הוחזרו למצב שלפני העדכון.'
     }
@@ -222,7 +262,10 @@ if($Mode -eq 'Worker'){
     [void](Make-Backup); [void](Compose @('stop','engine','backend','frontend'))
     Restore-Source $rollbackZip @($rollback.newFiles)
     Restore-Database $rollback.databaseBackupId
-    foreach($image in $rollback.images){[void](Run-Docker @('tag',$image.id,$image.tag))}
+    if(Test-ImagesMode -and $rollback.envImages){
+     $previous=@{}; foreach($property in $rollback.envImages.PSObject.Properties){$previous[$property.Name]=$property.Value}
+     Set-EnvImages $previous
+    }else{foreach($image in $rollback.images){[void](Run-Docker @('tag',$image.id,$image.tag))}}
     [void](Compose @('up','-d','--no-deps','backend','engine','frontend') 300)
     Json-Write (Join-Path $Store 'installed-release.json') $rollback.previousRelease
     Wait-Application

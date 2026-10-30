@@ -318,7 +318,7 @@ function Run-Install{
   if($pending.IsCompleted){
    $line=$pending.Result; if($null -eq $line){break}
    if($line -like 'INSTALL-ERROR:*'){$failure=$line.Substring(14)}
-   elseif($line -match '^Building (\S+)\.\.\.$'){$index=[array]::IndexOf($script:Phases,$Matches[1]); if($index -ge 0){$bar.Value=$index*10; $phase.Text='בונה: '+$names[$Matches[1]]+' ('+($index+1)+' מתוך '+$Phases.Count+')'}}
+   elseif($line -match '^(Building|Downloading) (\S+)\.\.\.$'){$verb=$(if($Matches[1] -eq 'Downloading'){'מוריד רכיב מוכן: '}else{'בונה: '}); $index=[array]::IndexOf($script:Phases,$Matches[2]); if($index -ge 0){$bar.Value=$index*10; $phase.Text=$verb+$names[$Matches[2]]+' ('+($index+1)+' מתוך '+$Phases.Count+')'}}
    elseif($line -match '^#\d+ \[[^\]]+\] (.+)$'){$activity.Text=$Matches[1].Substring(0,[Math]::Min(140,$Matches[1].Length)); if($bar.Value -lt $index*10+9){$bar.Value++}}
    if($details.TextLength -gt 200000){$details.Text=$details.Text.Substring(100000)}
    $details.AppendText($line+[Environment]::NewLine); $pending=$p.StandardOutput.ReadLineAsync()

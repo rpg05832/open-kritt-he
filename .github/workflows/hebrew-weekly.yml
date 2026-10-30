@@ -1,0 +1,114 @@
+# Weekly hands-off maintenance of the Hebrew distribution.
+#
+# 1. Tool pins: scripts/update-security-tools.mjs picks the newest stable release
+#    of every scanner and AI CLI that is at least 14 days old (official SHA-256).
+# 2. Upstream: merges the newest open-kritt release that is at least 14 days old,
+#    but only when the merge is clean; a conflict opens an issue and stops.
+# 3. Runs every test and the quality benchmark (inside the Hebrew release workflow).
+# 4. Only when everything passes: main is updated, tagged, and the release workflow
+#    publishes signed images, Setup.exe and the update package. Installed copies
+#    pick it up from the maintenance screen. Nothing is published on failure, and
+#    GitHub e-mails the repository owner.
+# npm / pip / Docker base-image updates come from Renovate (renovate.json, same 14-day rule).
+name: Hebrew weekly maintenance
+
+on:
+  schedule:
+    - cron: '17 3 * * 1' # Monday 03:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hebrew-weekly
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Prepare updates
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      issues: write
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
+      ref: ${{ steps.commit.outputs.ref }}
+      tag: ${{ steps.commit.outputs.tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - name: Identity for automatic commits
+        run: |
+          git config user.name "open-kritt-he-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Tool versions (14-day rule, official checksums)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node scripts/update-security-tools.mjs --apply
+          if ! git diff --quiet; then git commit -am "chore(tools): weekly pinned tool update"; fi
+      - name: Upstream open-kritt release (14-day rule, clean merges only)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git remote add upstream https://github.com/Kritt-ai/open-kritt.git
+          git fetch --quiet --tags upstream
+          cutoff=$(date -u -d '14 days ago' +%s)
+          tag=$(git for-each-ref --sort=-creatordate --format='%(refname:short) %(creatordate:unix)' refs/tags \
+            | awk -v c="$cutoff" '$1 ~ /^v[0-9]+\.[0-9]+\.[0-9]+$/ && $2 <= c {print $1; exit}')
+          if [ -z "$tag" ] || git merge-base --is-ancestor "$tag" HEAD; then echo "upstream: nothing new"; exit 0; fi
+          if git merge --no-edit "$tag"; then
+            echo "upstream: merged $tag"
+          else
+            git merge --abort
+            gh issue create --title "מיזוג גרסה $tag מהפרויקט המקורי דורש טיפול" \
+              --body "המיזוג האוטומטי של $tag נתקל בהתנגשות עם השינויים העבריים. שום דבר לא פורסם; המשתמשים נשארים בגרסה הקודמת. הריצו את המיזוג ידנית או בקשו עזרה."
+          fi
+      - name: Push the candidate branch
+        id: commit
+        run: |
+          if [ "$(git rev-parse HEAD)" = "$(git rev-parse "origin/${GITHUB_REF_NAME}")" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          branch="auto/weekly-$(date -u +%Y%m%d)"
+          git push --force origin "HEAD:refs/heads/$branch"
+          version=$(cut -d' ' -f1 VERSION)
+          {
+            echo "changed=true"
+            echo "ref=$(git rev-parse HEAD)"
+            echo "tag=he-v${version}-$(date -u +%Y%m%d)"
+          } >> "$GITHUB_OUTPUT"
+
+  release:
+    name: Test and publish
+    needs: update
+    if: needs.update.outputs.changed == 'true'
+    uses: ./.github/workflows/hebrew-release.yml
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+    with:
+      tag: ${{ needs.update.outputs.tag }}
+      ref: ${{ needs.update.outputs.ref }}
+
+  promote:
+    name: Move main to the published commit
+    needs: [update, release]
+    if: needs.update.outputs.changed == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Fast-forward main (never rewrites history)
+        run: |
+          git fetch origin "${{ needs.update.outputs.ref }}"
+          git push origin "${{ needs.update.outputs.ref }}:refs/heads/${GITHUB_REF_NAME}"

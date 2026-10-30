@@ -142,5 +142,49 @@
         "engine/tests/test_security_hardening.py"
       ]
     }
-  ]
+  ],
+  "runtimeVendors": {
+    "cursor": {
+      "flag": "INSTALL_CURSOR",
+      "command": "cursor-agent",
+      "aliases": [
+        "agent"
+      ],
+      "version": "2026.07.09-a3815c0",
+      "format": "tar.gz",
+      "terms": "https://cursor.com/terms-of-service",
+      "assets": {
+        "amd64": {
+          "file": "cursor-agent-2026.07.09-a3815c0-linux-x64.tar.gz",
+          "url": "https://downloads.cursor.com/lab/2026.07.09-a3815c0/linux/x64/agent-cli-package.tar.gz",
+          "sha256": "c7c1f32249cedb99cc20cd4eed1f9308dc2299a78c283bbc6efd6d658cd4977e"
+        },
+        "arm64": {
+          "file": "cursor-agent-2026.07.09-a3815c0-linux-arm64.tar.gz",
+          "url": "https://downloads.cursor.com/lab/2026.07.09-a3815c0/linux/arm64/agent-cli-package.tar.gz",
+          "sha256": "11b2b6801136a11a3632a4b1080ea3bfc7d97d0a68382be9ede1faf5333207fb"
+        }
+      }
+    },
+    "grok": {
+      "flag": "INSTALL_GROK",
+      "command": "grok",
+      "aliases": [],
+      "version": "1.0.5",
+      "format": "binary",
+      "terms": "https://x.ai/legal/terms-of-service",
+      "assets": {
+        "amd64": {
+          "file": "grok-1.0.5-linux-x86_64",
+          "url": "https://x.ai/cli/grok-1.0.5-linux-x86_64",
+          "sha256": "9ba87444e1819e8f6104adbbf4676a870c204380aa5c3e1c38a926c4ea677238"
+        },
+        "arm64": {
+          "file": "grok-1.0.5-linux-aarch64",
+          "url": "https://x.ai/cli/grok-1.0.5-linux-aarch64",
+          "sha256": "1c1fe67d7c35497fb09f44a451f57acc3787add4c9aea2c56f5c7c75dc5ffcf1"
+        }
+      }
+    }
+  }
 }

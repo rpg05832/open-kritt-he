@@ -18,4 +18,9 @@ COPY server.py ./
 ENV EXECUTOR_VIEW_HOST=0.0.0.0 \
     EXECUTOR_VIEW_PORT=8090
 
+# Runtime CA bundle from user-approved certificates and tools installed on this
+# machine (see runtime-env.sh); TLS verification stays on.
+COPY runtime-env.sh /usr/local/bin/runtime-env
+RUN sed -i 's/\r$//' /usr/local/bin/runtime-env && chmod 0755 /usr/local/bin/runtime-env
+ENTRYPOINT ["/usr/local/bin/runtime-env"]
 CMD ["python", "server.py"]

@@ -89,6 +89,8 @@ services:
       # Local repositories: host LOCAL_REPOS_PATH -> /local_repos (read-only here;
       # the backend only lists/reads them). Adding a folder on the host appears live.
       - ${LOCAL_REPOS_PATH:-./local_repos}:/local_repos:ro
+      - open-kritt-runtime:/opt/runtime-tools:ro
+      - ${APPROVED_CA_DIR:-../certificates}:/run/approved-ca:ro
 
   engine:
     build:
@@ -162,6 +164,10 @@ services:
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}
       # Where local repos live INSIDE the container (the host dir is bind-mounted here).
       LOCAL_REPOS_PATH: /local_repos
+      ENGINE_RUNTIME_TOOLS_VOLUME: open-kritt-runtime
+      # Optional proprietary CLIs; installed on this machine at start when not baked in.
+      INSTALL_CURSOR: ${INSTALL_CURSOR:-0}
+      INSTALL_GROK: ${INSTALL_GROK:-0}
     depends_on:
       db:
         condition: service_healthy
@@ -189,6 +195,11 @@ services:
       # never needs to be modified by the engine.
       - ${LOCAL_REPOS_PATH:-./local_repos}:/run/open-kritt-secrets/local-repos:ro
       - engine-checkout-cache:/checkout-cache
+      # Runtime tools (Claude Code etc.) and the CA bundle shared with scan runners.
+      - open-kritt-runtime:/opt/runtime-tools
+      # Verified Cursor/Grok files added in the wizard (used instead of downloading).
+      - ./vendor-cache:/run/vendor-cache:ro
+      - ${APPROVED_CA_DIR:-../certificates}:/run/approved-ca:ro
 
   executor-view:
     build:
@@ -234,6 +245,8 @@ services:
       - ${ENGINE_GROK_HOME_HOST:-./.data/grok}:/root/.grok:ro,z
       - ${ENGINE_GROK_ACCOUNTS_HOST:-./.data/grok-accounts}:/grok-accounts:ro,z
       - ${EXECUTOR_VIEW_AUTH_HOST:-./.data/engine/executor-auth}:/executor-auth
+      - open-kritt-runtime:/opt/runtime-tools:ro
+      - ${APPROVED_CA_DIR:-../certificates}:/run/approved-ca:ro
     healthcheck:
       test:
         [
@@ -268,4 +281,7 @@ services:
       - ./database/init:/docker-entrypoint-initdb.d:ro
 
 volumes:
+  # Fixed name: the engine mounts it into scan runners by this name.
+  open-kritt-runtime:
+    name: open-kritt-runtime
   engine-checkout-cache:

@@ -1,0 +1,23 @@
+# Prebuilt-image mode: services run from images published on GitHub (ghcr.io)
+# instead of images built on this computer. install.ps1 -FromImages writes the
+# references, pinned by digest, into .env from the release's images.json and adds
+# this file to COMPOSE_FILE. The source code in this folder is still mounted, so
+# the installed code and the image always come from the same release.
+# Published images contain no proprietary CLI and no network certificate: Claude
+# Code is installed on first start and approved certificates are added at runtime.
+services:
+  frontend:
+    image: ${OPEN_KRITT_FRONTEND_IMAGE:?prebuilt image reference missing; run the installer again}
+    pull_policy: missing
+  backend:
+    image: ${OPEN_KRITT_BACKEND_IMAGE:?prebuilt image reference missing; run the installer again}
+    pull_policy: missing
+  engine:
+    image: ${ENGINE_IMAGE:?prebuilt image reference missing; run the installer again}
+    pull_policy: missing
+  executor-view:
+    image: ${OPEN_KRITT_EXECUTOR_VIEW_IMAGE:?prebuilt image reference missing; run the installer again}
+    pull_policy: missing
+  db:
+    image: ${OPEN_KRITT_DB_IMAGE:?prebuilt image reference missing; run the installer again}
+    pull_policy: missing

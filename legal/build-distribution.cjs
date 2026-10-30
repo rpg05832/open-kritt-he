@@ -78,6 +78,9 @@ for (const [file, [script, extra]] of Object.entries(launchers)) {
 }
 // Safe portable defaults; no machine-specific override is copied.
 put('app/docker-compose.override.yml', fs.readFileSync(path.join(root, 'windows', 'docker-compose.distribution.yml')));
+// Prebuilt-image mode: used when images.json from a GitHub release is present.
+put('app/docker-compose.images.yml', fs.readFileSync(path.join(root, 'windows', 'docker-compose.images.yml')));
+if (fs.existsSync(path.join(root, 'legal', 'images.json'))) put('images.json', fs.readFileSync(path.join(root, 'legal', 'images.json')));
 
 // ---------- privacy and secret scan (build fails on any hit) ----------
 const forbidden = [

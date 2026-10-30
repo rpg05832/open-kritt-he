@@ -16,9 +16,12 @@ WORKDIR /app
 # node_modules, so deps are installed again on first start to be safe.)
 COPY package*.json ./
 RUN npm ci
+# INCLUDE_VENDOR_CLIS=0 builds the publishable image: Claude Code is proprietary
+# and is then installed on the user's machine at first start (runtime_tools.py).
+ARG INCLUDE_VENDOR_CLIS=1
 RUN npm install --global --no-audit --no-fund @openai/codex@0.145.0 \
     && codex --version \
-    && npm install --global --no-audit --no-fund --allow-scripts=@anthropic-ai/claude-code @anthropic-ai/claude-code@2.1.215
+    && if [ "$INCLUDE_VENDOR_CLIS" = "1" ]; then npm install --global --no-audit --no-fund --allow-scripts=@anthropic-ai/claude-code @anthropic-ai/claude-code@2.1.215; fi
 # Accounts spawns `grok login --device-auth` inside this image. Grok Build is
 # optional (INSTALL_GROK=1, same pinned version and SHA-256 as the engine) and
 # off by default because x.ai downloads are blocked on some filtered networks.
@@ -50,4 +53,9 @@ EXPOSE 3002
 
 # On start: ensure deps + client are present (handles the mounted-volume case),
 # apply the schema idempotently (covers a persisted-but-empty DB), then launch.
+# Runtime CA bundle from user-approved certificates and tools installed on this
+# machine (see runtime-env.sh); TLS verification stays on.
+COPY runtime-env.sh /usr/local/bin/runtime-env
+RUN sed -i 's/\r$//' /usr/local/bin/runtime-env && chmod 0755 /usr/local/bin/runtime-env
+ENTRYPOINT ["/usr/local/bin/runtime-env"]
 CMD ["sh", "-c", "npm ci && npx prisma generate && npm run migrate && node src/server.js"]
