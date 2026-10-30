@@ -43,31 +43,39 @@ async function verifyAgainstTag(zipBytes) {
   try {
     fs.writeFileSync(path.join(dir, 'u.zip'), zipBytes);
     const out = path.join(dir, 'x'); fs.mkdirSync(out);
-    // bsdtar reads zip; on Windows use the system one (Git's GNU tar cannot).
-    const tar = process.platform === 'win32' ? path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe') : 'bsdtar';
-    cp.execFileSync(tar, ['-xf', path.join(dir, 'u.zip'), '-C', out]);
-    // Line endings may differ (CI checkout on Windows); content may not.
-    const normalize = (data) => (data.includes(0) ? data : Buffer.from(data.toString('utf8').replace(/\r\n/g, '\n'), 'utf8'));
+    // Read the zip with the same reader the maintenance agent uses (.NET ZipFile),
+    // entry by entry, so what is verified is exactly what gets installed.
+    const ps = [
+      'Add-Type -AssemblyName System.IO.Compression.FileSystem',
+      '$z=[IO.Compression.ZipFile]::OpenRead($env:K_ZIP); $list=@(); $i=0',
+      'try { foreach($e in $z.Entries){ if($e.FullName.EndsWith([string][char]47) -and $e.Length -eq 0){continue}',
+      ' $f=Join-Path $env:K_OUT ([string]$i); $s=$e.Open(); $o=[IO.File]::Create($f); try{$s.CopyTo($o)}finally{$o.Dispose();$s.Dispose()}',
+      ' $list+=[pscustomobject]@{name=$e.FullName;file=[string]$i}; $i++ } } finally { $z.Dispose() }',
+      '[IO.File]::WriteAllText((Join-Path $env:K_OUT "list.json"),(ConvertTo-Json -InputObject $list -Compress),(New-Object Text.UTF8Encoding $false))',
+    ].join('; ');
+    cp.execFileSync(process.platform === 'win32' ? 'powershell.exe' : 'pwsh', ['-NoProfile', '-Command', ps], { env: { ...process.env, K_ZIP: path.join(dir, 'u.zip'), K_OUT: out }, stdio: ['ignore', 'ignore', 'inherit'] });
+    const entries = JSON.parse(fs.readFileSync(path.join(out, 'list.json'), 'utf8'));
+    // Line endings may differ (CI checkout on Windows): drop only CR bytes that
+    // directly precede LF; every other byte must match.
+    const normalize = (data) => { const keep = []; for (let i = 0; i < data.length; i++) if (!(data[i] === 13 && data[i + 1] === 10)) keep.push(data[i]); return Buffer.from(keep); };
+    const seen = new Set();
     let count = 0;
-    (function walk(folder, rel) {
-      for (const entry of fs.readdirSync(folder, { withFileTypes: true })) {
-        const name = rel ? rel + '/' + entry.name : entry.name;
-        if (entry.isSymbolicLink()) throw new Error('symbolic link in update package: ' + name);
-        if (entry.isDirectory()) { walk(path.join(folder, entry.name), name); continue; }
-        const data = fs.readFileSync(path.join(folder, entry.name));
-        if (name === 'app/images.json' || name === 'app/legal/images.json') {
-          const images = JSON.parse(data.toString('utf8').replace(/^﻿/, ''));
-          const pin = new RegExp(`^ghcr\\.io/${repo.split('/')[0].toLowerCase()}/[a-z0-9._/-]+@sha256:[a-f0-9]{64}$`);
-          if (images.version !== tag || !Object.values(images.images || {}).every((v) => pin.test(v))) throw new Error('images.json does not pin this repository\'s images for ' + tag);
-        } else {
-          if (!name.startsWith('app/')) throw new Error('unexpected path in update package: ' + name);
-          let expected;
-          try { expected = gitQuiet('show', `${local}:${name.slice(4)}`); } catch { throw new Error('file not in tag ' + tag + ': ' + name); }
-          if (!normalize(expected).equals(normalize(data))) throw new Error('file differs from tag ' + tag + ': ' + name);
-        }
-        count++;
+    for (const { name, file } of entries) {
+      if (!/^app\/[A-Za-z0-9._@()+\-\/ ]+$/.test(name) || name.split('/').some((p) => p === '' || p === '.' || p === '..')) throw new Error('unexpected path in update package: ' + name);
+      if (seen.has(name.toLowerCase())) throw new Error('duplicate entry in update package: ' + name);
+      seen.add(name.toLowerCase());
+      const data = fs.readFileSync(path.join(out, file));
+      if (name === 'app/images.json' || name === 'app/legal/images.json') {
+        const images = JSON.parse(data.toString('utf8').replace(/^﻿/, ''));
+        const pin = new RegExp(`^ghcr\\.io/${repo.split('/')[0].toLowerCase()}/[a-z0-9._/-]+@sha256:[a-f0-9]{64}$`);
+        if (images.version !== tag || !Object.values(images.images || {}).every((v) => pin.test(v))) throw new Error(`images.json does not pin this repository's images for ${tag}`);
+      } else {
+        let expected;
+        try { expected = gitQuiet('show', `${local}:${name.slice(4)}`); } catch { throw new Error('file not in tag ' + tag + ': ' + name); }
+        if (!normalize(expected).equals(normalize(data))) throw new Error('file differs from tag ' + tag + ': ' + name);
       }
-    })(out, '');
+      count++;
+    }
     console.error(`verified ${count} files against ${tag} (${local})`);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
@@ -78,7 +86,7 @@ async function verifyAgainstTag(zipBytes) {
   const release = await (await api(`https://api.github.com/repos/${repo}/releases/tags/${encodeURIComponent(tag)}`)).json();
   const zip = release.assets.find((a) => a.name === 'open-kritt-hebrew-update.zip');
   if (!zip) throw new Error('the release has no open-kritt-hebrew-update.zip');
-  if (release.assets.some((a) => a.name === NAME)) throw new Error(`${NAME} already exists on this release; nothing to do`);
+  if (!dryRun && release.assets.some((a) => a.name === NAME)) throw new Error(`${NAME} already exists on this release; nothing to do`);
   // Download the exact file users will download, and hash it here.
   const bytes = Buffer.from(await (await api(zip.url, { headers: { Accept: 'application/octet-stream' } })).arrayBuffer());
   const sha256 = crypto.createHash('sha256').update(bytes).digest('hex');
