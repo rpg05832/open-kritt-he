@@ -171,6 +171,9 @@ jobs:
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           tag_name: ${{ env.TAG }}
+          # The weekly run builds a commit that is not on main yet; tag exactly that
+          # commit (an existing tag, from a tag push, is left as it is).
+          target_commitish: ${{ inputs.ref || github.sha }}
           name: סריקת אבטחה ${{ env.TAG }}
           body: |
             הגרסה העברית, התוספות והשיפורים בוצעו על ידי @ארי ממתמחים טופ. מבוסס על open·kritt (AGPL-3.0).
