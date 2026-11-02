@@ -75,7 +75,8 @@ jobs:
           if git merge --no-edit -m "Merge upstream $tag ($sha)" "$sha"; then
             echo "upstream: merged $tag"
           else
-            git merge --abort
+            # A failed merge may not have started at all (e.g. unrelated histories).
+            git merge --abort 2>/dev/null || true
             gh issue create --title "מיזוג גרסה $tag מהפרויקט המקורי דורש טיפול" \
               --body "המיזוג האוטומטי של $tag נתקל בהתנגשות עם השינויים העבריים. שום דבר לא פורסם; המשתמשים נשארים בגרסה הקודמת. הריצו את המיזוג ידנית או בקשו עזרה."
           fi
