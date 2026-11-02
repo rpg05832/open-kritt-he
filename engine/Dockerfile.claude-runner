@@ -4,7 +4,7 @@ WORKDIR /workspace
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates git \
-    && npm install -g @anthropic-ai/claude-code@2.1.215 \
+    && npm install -g @anthropic-ai/claude-code@2.1.303 \
     && mkdir -p /home/runner/.claude /home/runner/.config /home/runner/.cache /home/runner/.local/share /home/runner/.npm \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
