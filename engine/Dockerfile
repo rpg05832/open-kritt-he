@@ -25,9 +25,9 @@ ARG INCLUDE_VENDOR_CLIS=1
 RUN apt-get update \
     && apt-get install -y --no-install-recommends bash ca-certificates curl git util-linux \
     && npm install --global --no-audit --no-fund npm@12.2.1 \
-    && npm install --global --no-audit --no-fund @openai/codex@0.163.0 \
+    && npm install --global --no-audit --no-fund @openai/codex@0.164.0 \
     && codex --version \
-    && if [ "$INCLUDE_VENDOR_CLIS" = "1" ]; then npm install --global --no-audit --no-fund --allow-scripts=@anthropic-ai/claude-code @anthropic-ai/claude-code@2.1.303; fi \
+    && if [ "$INCLUDE_VENDOR_CLIS" = "1" ]; then npm install --global --no-audit --no-fund --allow-scripts=@anthropic-ai/claude-code @anthropic-ai/claude-code@2.1.310; fi \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

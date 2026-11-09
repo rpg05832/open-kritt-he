@@ -290,10 +290,10 @@ def test_agent_cli_builds_use_exact_package_versions():
 
     assert "npm@12.2.1" in dockerfiles["engine"]
     for name in ("engine", "backend"):
-        assert "@openai/codex@0.163.0" in dockerfiles[name]
-        assert "@openai/codex@0.163.0 \\\n    && codex --version" in dockerfiles[name]
-        assert "@anthropic-ai/claude-code@2.1.303" in dockerfiles[name]
-    assert "@anthropic-ai/claude-code@2.1.303" in dockerfiles["claude-runner"]
+        assert "@openai/codex@0.164.0" in dockerfiles[name]
+        assert "@openai/codex@0.164.0 \\\n    && codex --version" in dockerfiles[name]
+        assert "@anthropic-ai/claude-code@2.1.310" in dockerfiles[name]
+    assert "@anthropic-ai/claude-code@2.1.310" in dockerfiles["claude-runner"]
     for name in ("engine", "backend"):
         assert "GROK_BUILD_VERSION=1.0.5" in dockerfiles[name]
         assert "https://x.ai/cli/grok-${GROK_BUILD_VERSION}-" in dockerfiles[name]

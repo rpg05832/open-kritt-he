@@ -19,9 +19,9 @@ RUN npm ci
 # INCLUDE_VENDOR_CLIS=0 builds the publishable image: Claude Code is proprietary
 # and is then installed on the user's machine at first start (runtime_tools.py).
 ARG INCLUDE_VENDOR_CLIS=1
-RUN npm install --global --no-audit --no-fund @openai/codex@0.163.0 \
+RUN npm install --global --no-audit --no-fund @openai/codex@0.164.0 \
     && codex --version \
-    && if [ "$INCLUDE_VENDOR_CLIS" = "1" ]; then npm install --global --no-audit --no-fund --allow-scripts=@anthropic-ai/claude-code @anthropic-ai/claude-code@2.1.303; fi
+    && if [ "$INCLUDE_VENDOR_CLIS" = "1" ]; then npm install --global --no-audit --no-fund --allow-scripts=@anthropic-ai/claude-code @anthropic-ai/claude-code@2.1.310; fi
 # Accounts spawns `grok login --device-auth` inside this image. Grok Build is
 # optional (INSTALL_GROK=1, same pinned version and SHA-256 as the engine) and
 # off by default because x.ai downloads are blocked on some filtered networks.
