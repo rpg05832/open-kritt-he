@@ -68,16 +68,16 @@
       "license": "LGPL-2.1-or-later",
       "homepage": "https://github.com/semgrep/semgrep",
       "pypi": "semgrep",
-      "version": "1.182.1",
-      "released": "2026-10-22"
+      "version": "1.183.0",
+      "released": "2026-10-29"
     },
     "ruff": {
       "license": "MIT",
       "homepage": "https://github.com/astral-sh/ruff",
       "pypi": "ruff",
       "binary": "ruff",
-      "version": "0.17.2",
-      "released": "2026-10-22",
+      "version": "0.17.3",
+      "released": "2026-10-27",
       "purpose": "quality"
     },
     "lizard": {
@@ -85,8 +85,8 @@
       "homepage": "https://github.com/terryyin/lizard",
       "pypi": "lizard",
       "binary": "lizard",
-      "version": "1.24.3",
-      "released": "2026-10-24",
+      "version": "1.25.0",
+      "released": "2026-11-02",
       "purpose": "quality"
     },
     "biome": {
@@ -94,8 +94,8 @@
       "homepage": "https://github.com/biomejs/biome",
       "npm": "@biomejs/biome",
       "binary": "biome",
-      "version": "2.6.3",
-      "released": "2026-10-24",
+      "version": "2.6.4",
+      "released": "2026-10-28",
       "purpose": "quality"
     },
     "jscpd": {
@@ -112,8 +112,8 @@
     {
       "package": "@openai/codex",
       "license": "Apache-2.0",
-      "version": "0.164.0",
-      "released": "2026-10-23",
+      "version": "0.166.0",
+      "released": "2026-10-29",
       "files": [
         "engine/Dockerfile",
         "backend/Dockerfile",
@@ -123,8 +123,8 @@
     {
       "package": "@anthropic-ai/claude-code",
       "license": "Proprietary (installed on the user machine, never redistributed)",
-      "version": "2.1.310",
-      "released": "2026-10-23",
+      "version": "2.1.316",
+      "released": "2026-10-31",
       "files": [
         "engine/Dockerfile",
         "backend/Dockerfile",
