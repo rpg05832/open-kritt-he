@@ -28,18 +28,18 @@
       "license": "Apache-2.0",
       "homepage": "https://github.com/google/osv-scanner",
       "repository": "google/osv-scanner",
-      "version": "2.7.0",
-      "released": "2026-10-12",
+      "version": "2.7.1",
+      "released": "2026-11-09",
       "binary": "osv-scanner",
       "assets": {
         "amd64": {
-          "url": "https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanner_linux_amd64",
-          "sha256": "160c6253e2922e9e0a6a9771c5c4c40a4b3c6090b34a3cdd5e80c96cc2e4218b",
+          "url": "https://github.com/google/osv-scanner/releases/download/v2.7.1/osv-scanner_linux_amd64",
+          "sha256": "fb7dab19a8bd9bbe5c3189f09d4b7ee1820c9553a23bac202648a56efd2f6ee8",
           "format": "binary"
         },
         "arm64": {
-          "url": "https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanner_linux_arm64",
-          "sha256": "4061ef4c021ed3c47f203b818f337e351336cc5cd67c0274fc36bd1dfc728dd7",
+          "url": "https://github.com/google/osv-scanner/releases/download/v2.7.1/osv-scanner_linux_arm64",
+          "sha256": "983d22fbad9724514e3fcc6acc83b5fa64c5ffa6b0d9f510028f22c1b223ff81",
           "format": "binary"
         }
       }
@@ -48,18 +48,18 @@
       "license": "Apache-2.0",
       "homepage": "https://github.com/aquasecurity/trivy",
       "repository": "aquasecurity/trivy",
-      "version": "0.76.1",
-      "released": "2026-10-21",
+      "version": "0.76.2",
+      "released": "2026-11-05",
       "binary": "trivy",
       "assets": {
         "amd64": {
-          "url": "https://github.com/aquasecurity/trivy/releases/download/v0.76.1/trivy_0.76.1_Linux-64bit.tar.gz",
-          "sha256": "c7cbe3137fb8a48a17574bede3dd6beb16742d1e9772929940fc90082c39d9c0",
+          "url": "https://github.com/aquasecurity/trivy/releases/download/v0.76.2/trivy_0.76.2_Linux-64bit.tar.gz",
+          "sha256": "bc0fc726e017b8927a62b2d3531d7a84ee01769daf5c99ed866dced54089fdbf",
           "format": "tar.gz"
         },
         "arm64": {
-          "url": "https://github.com/aquasecurity/trivy/releases/download/v0.76.1/trivy_0.76.1_Linux-ARM64.tar.gz",
-          "sha256": "e174dff2a6dba5e3ae41f8d0537a6324405bd08132497340304c6b20e0f16a1f",
+          "url": "https://github.com/aquasecurity/trivy/releases/download/v0.76.2/trivy_0.76.2_Linux-ARM64.tar.gz",
+          "sha256": "ab9d51f86e6a5fb936f605faff6b593ac51bc378fff4d3e8b9d58358b9c367c3",
           "format": "tar.gz"
         }
       }
@@ -68,16 +68,16 @@
       "license": "LGPL-2.1-or-later",
       "homepage": "https://github.com/semgrep/semgrep",
       "pypi": "semgrep",
-      "version": "1.183.0",
-      "released": "2026-10-29"
+      "version": "1.184.0",
+      "released": "2026-11-05"
     },
     "ruff": {
       "license": "MIT",
       "homepage": "https://github.com/astral-sh/ruff",
       "pypi": "ruff",
       "binary": "ruff",
-      "version": "0.17.3",
-      "released": "2026-10-27",
+      "version": "0.17.4",
+      "released": "2026-11-05",
       "purpose": "quality"
     },
     "lizard": {
@@ -85,8 +85,8 @@
       "homepage": "https://github.com/terryyin/lizard",
       "pypi": "lizard",
       "binary": "lizard",
-      "version": "1.25.0",
-      "released": "2026-11-02",
+      "version": "1.25.1",
+      "released": "2026-11-07",
       "purpose": "quality"
     },
     "biome": {
@@ -94,8 +94,8 @@
       "homepage": "https://github.com/biomejs/biome",
       "npm": "@biomejs/biome",
       "binary": "biome",
-      "version": "2.6.4",
-      "released": "2026-10-28",
+      "version": "2.6.6",
+      "released": "2026-11-06",
       "purpose": "quality"
     },
     "jscpd": {
@@ -103,8 +103,8 @@
       "homepage": "https://github.com/kucherenko/jscpd",
       "npm": "jscpd",
       "binary": "jscpd",
-      "version": "5.4.2",
-      "released": "2026-10-20",
+      "version": "5.4.3",
+      "released": "2026-11-08",
       "purpose": "quality"
     }
   },
@@ -112,8 +112,8 @@
     {
       "package": "@openai/codex",
       "license": "Apache-2.0",
-      "version": "0.166.0",
-      "released": "2026-10-29",
+      "version": "0.167.0",
+      "released": "2026-11-06",
       "files": [
         "engine/Dockerfile",
         "backend/Dockerfile",
@@ -123,8 +123,8 @@
     {
       "package": "@anthropic-ai/claude-code",
       "license": "Proprietary (installed on the user machine, never redistributed)",
-      "version": "2.1.316",
-      "released": "2026-10-31",
+      "version": "2.1.319",
+      "released": "2026-11-06",
       "files": [
         "engine/Dockerfile",
         "backend/Dockerfile",
@@ -135,8 +135,8 @@
     {
       "package": "npm",
       "license": "Artistic-2.0",
-      "version": "12.2.1",
-      "released": "2026-10-15",
+      "version": "12.2.2",
+      "released": "2026-11-04",
       "files": [
         "engine/Dockerfile",
         "engine/tests/test_security_hardening.py"
